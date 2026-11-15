@@ -7,17 +7,18 @@
   <meta name="description" content="나만의 야구 선수를 만들고 드래프트부터 은퇴까지 성장시키는 야구 커리어 게임">
   <title>DIAMOND — Baseball Career</title>
   <link rel="stylesheet" href="./assets/css/main.css">
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
 </head>
 <body>
   <div id="app" class="app-shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="DIAMOND 홈"><span class="brand-mark">D</span><span>DIAMOND<small>BASEBALL CAREER</small></span></a>
-      <div class="topbar-right"><span id="save-indicator" class="save-indicator">저장 준비</span><button id="reset-game" class="text-button" type="button">새 게임</button></div>
+      <div class="topbar-right"><span class="build-label">3D STADIUM PROTOTYPE</span></div>
     </header>
     <main id="screen" class="screen" aria-live="polite">
       <section class="loading"><div class="loader"></div><p>구장을 준비하고 있습니다.</p></section>
     </main>
-    <footer class="footer">DIAMOND BASEBALL CAREER <span>·</span> FIRST PLAYABLE BUILD</footer>
+    <footer class="footer">DIAMOND BASEBALL CAREER <span>·</span> ORIGINAL 3D BALLPARKS</footer>
   </div>
   <div id="toast-region" class="toast-region" aria-live="polite"></div>
   <script type="module" src="./src/app.js"></script>
