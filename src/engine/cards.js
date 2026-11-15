@@ -14,7 +14,7 @@ export const CARD_TYPES = [
 ];
 
 function baseStatsFor(player, typeId) {
-  const source = { ...player.attributes, ...(player.pitcherAttributes || {}) };
+  const source = { ...player.attributes, ...(player.secondaryAttributes || {}) };
   const modifier = ({ star1:0, star2:1, star3:2, star4:3, star5:4, national:5, allstar:3, top:4, icon:7, goldglove:5 })[typeId] || 0;
   const result = {};
   for (const [key, value] of Object.entries(source)) {
