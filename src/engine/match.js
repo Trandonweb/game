@@ -28,13 +28,16 @@ export function createLiveMatch(player, controlMode = "player") {
   };
 }
 
-function advanceRunner(match, bases, runs) {
+function advanceRunner(match, bases, runs, steps = 1) {
   const next = [false, false, false];
   let scored = runs;
-  if (bases[2]) scored++;
-  if (bases[1]) next[2] = true;
-  if (bases[0]) next[1] = true;
-  next[0] = true;
+  bases.forEach((occupied, index) => {
+    if (!occupied) return;
+    const destination = index + steps;
+    if (destination >= 3) scored++;
+    else next[destination] = true;
+  });
+  if (steps <= 3) next[steps - 1] = true;
   match.bases = next;
   return scored;
 }
@@ -86,7 +89,7 @@ export function resolveBatterAction(match, player, action) {
     }
   } else {
     const timing = action === "good" ? 0.28 : action === "early" || action === "late" ? 0.08 : -0.05;
-    const chance = Math.max(0.12, Math.min(0.82, 0.35 + (contact-60)*0.004 + timing));
+    const chance = Math.max(0.10, Math.min(0.72, 0.22 + (contact-60)*0.003 + timing));
     if (Math.random() < chance) {
       const quality = Math.random() + (power-60)*0.004 + (action==="good"?0.22:0);
       if (quality > 0.91) {
@@ -94,8 +97,8 @@ export function resolveBatterAction(match, player, action) {
         match.userRuns += scored; match.bases=[false,false,false]; match.hits++; match.homeRuns++;
         match.lastResult = "홈런! "+scored+"점 득점!";
       } else if (quality > 0.63) {
-        const scored = advanceRunner(match,match.bases,0); match.userRuns += scored; match.hits++;
-        match.lastResult = "장타! 주자 "+scored+"명 홈인.";
+        const scored = advanceRunner(match,match.bases,0,2); match.userRuns += scored; match.hits++;
+        match.lastResult = "2루타! 주자 "+scored+"명 홈인.";
       } else {
         const scored = advanceRunner(match,match.bases,0); match.userRuns += scored; match.hits++;
         match.lastResult = "안타! 주자 "+scored+"명 득점.";
@@ -137,8 +140,8 @@ export function resolvePitchAction(match, player, pitchType, target) {
   } else if (Math.random() < .22+(velocity-60)*.002) {
     match.outs++; match.lastResult="타구! 수비수가 잡아 아웃 처리했습니다.";
   } else {
-    const runs=Math.random()<.13?2:Math.random()<.45?1:0;
-    match.opponentRuns+=runs; match.lastResult=runs?"안타 허용. "+runs+"점 실점.":"타자가 출루했습니다.";
+    const scored=advanceRunner(match,match.bases,0,Math.random()<.2?2:1);
+    match.opponentRuns+=scored; match.lastResult="안타 허용. "+scored+"점 실점.";
   }
   if (match.balls>=4) { match.outs++;match.lastResult="볼넷 허용. 주자가 출루했습니다.";match.balls=0;match.strikes=0; }
   else if (match.strikes>=3) { match.outs++;match.lastResult="삼진! 타자를 돌려세웠습니다.";match.strikeouts++;match.balls=0;match.strikes=0; }
