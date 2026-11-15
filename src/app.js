@@ -55,9 +55,9 @@ function syncTwpOption(){
 }
 function startNew(){Object.assign(state,{mode:"player",player:null,choices:[],draft:null,career:null,careerScreen:"dashboard",seasonResult:null});state.screen="create";render()}
 function handleCreate(form){const data=new FormData(form),position=String(data.get("position")),twp=data.get("twp")==="yes"&&canBeTwp(position);if(twp&&!canBeTwp(position))return toast("TWP는 투수 또는 DH 포지션에서만 선택할 수 있습니다.");state.player=createPlayerProfile({name:String(data.get("name")||"신인").trim(),position,isTwp:twp,batterType:String(data.get("batterType")),pitcherType:String(data.get("pitcherType"))});state.choices=[];state.screen="development";render()}
-function addPoint(key){if(state.choices.length>=3)return;state.choices.push(key);render()}
+function addPoint(key){const max=state.player?.isTwp?6:3;if(state.choices.length>=max)return;state.choices.push(key);render()}
 function removePoint(key){const i=state.choices.lastIndexOf(key);if(i>=0)state.choices.splice(i,1);render()}
-function confirmDevelopment(){if(state.choices.length!==3)return toast("능력치 배분을 3회 완료해 주세요.");try{state.player=applyDevelopment(state.player,state.choices);state.draft=runDraft(state.player,state.favoriteTeamId);state.player.teamId=state.draft.team.id;state.screen="draft";render()}catch(e){toast(e.message)}}
+function confirmDevelopment(){const max=state.player?.isTwp?6:3;if(state.choices.length!==max)return toast("능력치 배분을 "+max+"회 완료해 주세요.");try{state.player=applyDevelopment(state.player,state.choices);state.draft=runDraft(state.player,state.favoriteTeamId);state.player.teamId=state.draft.team.id;state.screen="draft";render()}catch(e){toast(e.message)}}
 function enterCareer(){const first=createCard(state.player,"star1",state.player.season);state.career=createCareer(state.player,state.draft.team.id,first);state.screen="career";state.careerScreen="dashboard";render();toast("프로 선수 생활을 시작했습니다.")}
 function selectCard(id){const c=state.career.cards.find(x=>x.id===id);if(!c)return;state.career.activeCardId=id;render();toast(c.name+" 카드를 주력 카드로 선택했습니다.")}
 function enhanceCard(id){const i=state.career.cards.findIndex(x=>x.id===id);if(i<0)return;try{state.career.cards[i]=trainCard(state.career.cards[i]);render();toast("카드별 독립 육성이 저장되었습니다.")}catch(e){toast(e.message)}}
