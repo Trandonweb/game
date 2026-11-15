@@ -34,3 +34,5 @@
 .player-card.card-star1 .card-type,.player-card.card-star2 .card-type,.player-card.card-star3 .card-type,.player-card.card-star4 .card-type,.player-card.card-star5 .card-type,.player-card.card-national .card-type,.player-card.card-top .card-type,.player-card.card-icon .card-type,.player-card.card-goldglove .card-type,.player-card.card-allstar .card-type{color:#fff;text-shadow:0 1px 4px #0008}
 @media(max-width:850px){.park-team-picker{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.stadium-head{align-items:flex-start;flex-direction:column;padding:15px}.park-team-picker{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}.park-team{padding:8px}.stadium-canvas-wrap{height:285px}}
+
+.player-card.card-allstar-nanum{background:linear-gradient(145deg,#ffc0ad,#e47a61 55%,#713b42);border-color:#ffd6c9}
