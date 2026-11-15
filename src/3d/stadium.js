@@ -33,7 +33,7 @@ function makeSeatBlock(scene,team){
     for(let x=-62;x<=62;x+=2.1)add(x,y,z,row);
     for(let side of [-1,1])for(let zz=-42;zz<=38;zz+=2.2)add(side*(57+row*.55),y,zz,row+1);
   }
-  mesh.count=n;mesh.instanceMatrix.needsUpdate=true;scene.add(mesh);
+  mesh.count=n;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;scene.add(mesh);
 }
 function createPark(team){
   const scene=new THREE.Scene();scene.background=new THREE.Color("#9bb8c7");scene.fog=new THREE.Fog("#9bb8c7",170,360);
@@ -86,6 +86,11 @@ function createPark(team){
   const headGeo=new THREE.SphereGeometry(.48,8,6),headMat=new THREE.MeshStandardMaterial({color:"#d7b08b"});
   const positions=[[0,1.2,-1],[-10,1.2,11],[10,1.2,11],[-25,1.2,-20],[25,1.2,-20],[0,1.2,22]];
   for(const [x,y,z] of positions){const body=new THREE.Mesh(bodyGeo,bodyMat);body.position.set(x,y,z);scene.add(body);const head=new THREE.Mesh(headGeo,headMat);head.position.set(x,y+1.4,z);scene.add(head)}
+  if(team.parkStyle==="coastal"){
+    const water=new THREE.Mesh(new THREE.PlaneGeometry(260,70),new THREE.MeshStandardMaterial({color:"#347d91",roughness:.45,metalness:.12}));
+    water.rotation.x=-Math.PI/2;water.position.set(0,-1,-132);scene.add(water);
+    for(let i=0;i<5;i++)addBox(scene,roofMat,-95+i*47,3,-92,18,2,8);
+  }
   // Low-poly skyline backdrop.
   const cityMat=new THREE.MeshStandardMaterial({color:"#718895",roughness:1});
   for(let i=0;i<25;i++){
