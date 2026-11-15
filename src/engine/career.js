@@ -82,15 +82,18 @@ export function finishSeason(career) {
   if (qualifies && next.player.level >= 15) award(next, "star4");
   if (qualifies && next.player.level >= 20) award(next, "star5");
 
-  const national = qualifies && performance.quality >= 72 && next.nationalSelectionsThisYear < 2;
-  if (national) {
+  // 국가대표는 시즌 활약에 따라 연 1~2회 선발될 수 있다.
+  // 72점부터 1회, 90점부터 2회 기회를 부여한다.
+  const nationalSelections = !qualifies ? 0 : performance.quality >= 90 ? 2 : performance.quality >= 72 ? 1 : 0;
+  for (let selection = 0; selection < nationalSelections && next.nationalSelectionsThisYear < 2; selection++) {
     next.nationalSelectionsThisYear++;
-    if (!next.cards.some(card => card.typeId === "national")) next.cards.push(createCard(next.player, "national", next.season));
-    else {
-      const card = next.cards.find(c => c.typeId === "national");
-      card.selectionCount++;
-      card.maxEnhancement = 15 + card.selectionCount;
-      next.cards = next.cards.map(c => c.id === card.id ? addCardAwardBonus(c, 2) : c);
+    const nationalCard = next.cards.find(card => card.typeId === "national");
+    if (!nationalCard) {
+      next.cards.push(createCard(next.player, "national", next.season));
+    } else {
+      nationalCard.selectionCount++;
+      nationalCard.maxEnhancement = 15 + nationalCard.selectionCount;
+      next.cards = next.cards.map(card => card.id === nationalCard.id ? addCardAwardBonus(card, 2) : card);
     }
     next.lastAwards.push("national");
   }
