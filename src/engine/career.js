@@ -237,6 +237,7 @@ function TEAMS_FOR_OFFERS(career) {
 const TEAMS_FOR_OFFERS_DATA = TEAMS;
 
 export function signFreeAgency(career, teamId) {
+  if (career.retired) throw new Error("은퇴 선수는 새 구단과 계약할 수 없습니다.");
   const offer = (career.freeAgencyOffers || []).find(item => item.teamId === teamId);
   if (!offer) throw new Error("선택할 수 있는 영입 제안이 없습니다. 먼저 FA 시장을 열어 주세요.");
   career.teamId = offer.teamId;
