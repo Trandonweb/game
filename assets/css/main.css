@@ -55,3 +55,19 @@
 .allocation-summary{display:flex;justify-content:space-between;align-items:center;margin-top:13px;padding:11px 12px;background:#0d1926;border:1px solid #304459;border-radius:9px;font-size:11px;color:#a9b9c8}
 .allocation-summary b{font-size:14px;color:#f0c778}
 @media(max-width:560px){.allocation-row{gap:7px}.allocation-info>small{max-width:190px;font-size:9px}.allocation-stepper{gap:4px}.allocation-current{width:31px}.step-button{width:27px;height:29px}.allocation-added{width:24px}}
+
+/* National-team card: keep the OVR readable over the bright flag stripe. */
+.player-card.card-national .card-ovr{
+  color:#111820;
+  text-shadow:0 1px 0 rgba(255,255,255,.45);
+  position:relative;
+  z-index:1;
+}
+.player-card.card-national h3,
+.player-card.card-national .card-meta,
+.player-card.card-national .card-footer{
+  color:#17212b;
+  text-shadow:0 1px 0 rgba(255,255,255,.35);
+}
+.stadium-canvas-wrap{background:linear-gradient(180deg,#8fa9b7,#263b4b);overflow:hidden}
+.stadium-canvas-wrap canvas{display:block;width:100%;height:100%;touch-action:pan-y}
