@@ -160,6 +160,29 @@ function addField(scene,team){
     for(let j=-2;j<=2;j++)box(scene,mat("#263744"),x+j*2.6,1.45,z-4.1,.25,2.6,.25);
   }
   const backstop=add(scene,new THREE.TorusGeometry(16,.24,8,64,Math.PI),capMaterial(team),[0,5,29],[Math.PI/2,0,Math.PI]);
+  // Bullpens: two separate warm-up areas beyond the foul territory.
+  const bullpenFloor=mat("#a97850",.96),bullpenRail=mat("#344b59",.62,.25);
+  for(const side of [-1,1]){
+    const bx=side*48,bz=-30;
+    const floor=add(scene,new THREE.CircleGeometry(11,32),bullpenFloor,[bx,.035,bz],[-Math.PI/2,0,0]);
+    floor.scale.set(1.25,.72,1);
+    box(scene,bullpenRail,bx,1.15,bz-9,29,2.3,.55);
+    box(scene,bullpenRail,bx,1.15,bz+9,29,2.3,.55);
+    for(let j=-1;j<=1;j++){
+      const warmup=add(scene,new THREE.CylinderGeometry(1.25,1.25,.25,20),dirt,[bx+j*6,.18,bz]);
+      box(scene,rubber,bx+j*6,.34,bz,.75,.12,.28);
+    }
+    box(scene,roofMat,bx,4.2,bz-9,30,.45,3);
+    for(let j=-2;j<=2;j++)box(scene,dugoutMat,bx+j*5,2,bz-9,.35,3.5,.35);
+  }
+  // Visible player benches inside each dugout.
+  for(const side of [-1,1]){
+    const x=side*24,z=16.2;
+    for(let row=0;row<2;row++){
+      box(scene,mat("#9b7652"),x,1.05+row*.45,z+row*1.2,12,.22,.55);
+      for(let j=-2;j<=2;j++)box(scene,mat("#344653"),x+j*2.4,1.65+row*.45,z+row*1.2,.18,.85,.18);
+    }
+  }
   return {grass,dirt};
 }
 function capMaterial(team){return mat(team.primary,.5,.2)}
@@ -203,7 +226,7 @@ function createPark(team){
   const ambient=new THREE.AmbientLight("#ffffff",.35);scene.add(ambient);
   const sun=new THREE.DirectionalLight("#fff0d4",3.1);sun.position.set(-100,150,85);sun.castShadow=true;
   sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-170;sun.shadow.camera.right=170;sun.shadow.camera.top=170;sun.shadow.camera.bottom=-170;sun.shadow.bias=-.00025;scene.add(sun);
-  const field=createField(scene,team);
+  const field=addField(scene,team);
   addFence(scene,team);addBowl(scene,team);addStadiumDetails(scene,team);addCrowd(scene,team);
   if(team.parkStyle==="coastal"){
     const water=add(scene,new THREE.PlaneGeometry(420,160),mat("#397e91",.34,.12),[0,-1,-245],[-Math.PI/2,0,0]);
