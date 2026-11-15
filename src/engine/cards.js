@@ -1,4 +1,4 @@
-import { CARD_RULES, BATTER_ATTRIBUTES, PITCHER_ATTRIBUTES } from "../data/config.js";
+import { CARD_RULES } from "../data/config.js";
 
 export const CARD_TYPES = [
   { id:"star1", name:"1성", group:"star", description:"최초 지명 카드" },
@@ -15,7 +15,8 @@ export const CARD_TYPES = [
 
 function baseStatsFor(player, typeId) {
   const source = { ...player.attributes, ...(player.secondaryAttributes || {}) };
-  const modifier = ({ star1:0, star2:1, star3:2, star4:3, star5:4, national:5, allstar:3, top:4, icon:7, goldglove:5 })[typeId] || 0;
+  // 국가대표는 올스타보다 상위 등급의 카드가 되도록 기본 능력치 보정을 확실히 높인다.
+  const modifier = ({ star1:0, star2:1, star3:2, star4:3, star5:4, national:7, allstar:3, top:4, icon:7, goldglove:5 })[typeId] || 0;
   const result = {};
   for (const [key, value] of Object.entries(source)) {
     let specialty = 0;
@@ -32,22 +33,14 @@ export function createCard(player, typeId, season, options = {}) {
   if (!type) throw new Error("알 수 없는 카드 종류입니다.");
   const rule = CARD_RULES[type.group];
   const card = {
-    id: crypto.randomUUID(),
-    playerId: player.id,
-    typeId,
+    id: crypto.randomUUID(), playerId: player.id, typeId,
     variant: typeId === "allstar" ? (options.variant || "dream") : null,
-    name: type.name,
-    season,
+    name: type.name, season,
     baseAttributes: baseStatsFor(player, typeId),
-    permanentBonus: Object.fromEntries(Object.keys(player.attributes).map(key => [key, 0])),
-    training: {},
-    enhancement: 0,
+    permanentBonus: {}, training: {}, enhancement: 0,
     maxEnhancement: typeof rule.maxEnhancement === "function" ? rule.maxEnhancement(options.count || 0) : rule.maxEnhancement,
-    selectionCount: options.count || 0,
-    consecutiveCount: options.consecutiveCount || 0,
-    lastReviewedSeason: season,
-    reviewHistory: [],
-    acquiredAt: Date.now()
+    selectionCount: options.count || 0, consecutiveCount: options.consecutiveCount || 0,
+    lastReviewedSeason: season, reviewHistory: [], acquiredAt: Date.now()
   };
   const keys = Object.keys(card.baseAttributes);
   card.permanentBonus = Object.fromEntries(keys.map(key => [key, 0]));
@@ -59,40 +52,26 @@ export function cardOverall(card) {
   const values = Object.keys(card.baseAttributes).map(key => card.baseAttributes[key] + (card.permanentBonus[key] || 0) + (card.training[key] || 0));
   return Math.round(values.reduce((a,b) => a+b, 0) / Math.max(values.length,1));
 }
-
 export function cardFinalAttributes(card) {
-  return Object.fromEntries(Object.keys(card.baseAttributes).map(key => [
-    key,
-    card.baseAttributes[key] + (card.permanentBonus[key] || 0) + (card.training[key] || 0)
-  ]));
+  return Object.fromEntries(Object.keys(card.baseAttributes).map(key => [key,card.baseAttributes[key]+(card.permanentBonus[key]||0)+(card.training[key]||0)]));
 }
-
 export function trainCard(card, amount = 1) {
   const next = structuredClone(card);
   if (next.enhancement >= next.maxEnhancement) throw new Error("이 카드의 최대 강화 단계에 도달했습니다.");
   next.enhancement += amount;
-  const keys = Object.keys(next.training);
-  const key = keys[(next.enhancement - 1) % keys.length];
+  const keys = Object.keys(next.training),key=keys[(next.enhancement-1)%keys.length];
   next.training[key] += 2;
   return next;
 }
-
 export function addCardAwardBonus(card, amount) {
   const next = structuredClone(card);
   for (const key of Object.keys(next.permanentBonus)) next.permanentBonus[key] += amount;
   return next;
 }
-
 export function reviewCard(card, newBaseAttributes, season) {
   const next = structuredClone(card);
   next.reviewHistory.push({ season: next.season, attributes: { ...next.baseAttributes } });
-  next.baseAttributes = { ...newBaseAttributes };
-  next.season = season;
-  next.lastReviewedSeason = season;
-  // Permanent award bonuses and player training are intentionally preserved.
+  next.baseAttributes = { ...newBaseAttributes };next.season=season;next.lastReviewedSeason=season;
   return next;
 }
-
-export function cardType(typeId) {
-  return CARD_TYPES.find(item => item.id === typeId);
-}
+export function cardType(typeId) { return CARD_TYPES.find(item => item.id === typeId); }
