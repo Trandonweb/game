@@ -57,11 +57,11 @@ function addStands(scene,team,concrete,roofMat){
   }
   if(team.parkStyle!=="open"){
     const roofRadius=outer+31;
-    const roof=new THREE.Mesh(new THREE.CylinderGeometry(roofRadius,roofRadius,2,shape==="circle"?64:8,1,true),roofMat);
-    roof.rotation.x=Math.PI/2;roof.position.set(0,team.parkStyle==="dome"?45:37,0);scene.add(roof);
+    const roof=new THREE.Mesh(new THREE.RingGeometry(outer+2,roofRadius,shape==="circle"?64:8),roofMat);
+    roof.rotation.x=-Math.PI/2;roof.position.set(0,team.parkStyle==="dome"?43:37,0);scene.add(roof);
     if(team.parkStyle==="dome"){
       const dome=new THREE.Mesh(new THREE.SphereGeometry(roofRadius,32,12,0,Math.PI*2,0,Math.PI/2),roofMat);
-      dome.position.y=36;dome.material=roofMat;scene.add(dome);
+      dome.scale.y=.28;dome.position.y=35;scene.add(dome);
     }
   }
 }
