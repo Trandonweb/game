@@ -97,7 +97,12 @@ export function finishSeason(career) {
     next.allstarStreak++;
     let card = next.cards.find(c => c.typeId === "allstar");
     if (!card) { card = createCard(next.player, "allstar", next.season, { consecutiveCount: next.allstarStreak }); next.cards.push(card); }
-    else { card.consecutiveCount = next.allstarStreak; card.baseAttributes = reviewBase(card, performance); }
+    else {
+      card.consecutiveCount = next.allstarStreak;
+      card.baseAttributes = reviewBase(card, performance);
+      // Consecutive-selection bonus is a persistent base-attribute addition, not training.
+      for (const key of Object.keys(card.permanentBonus)) card.permanentBonus[key] = next.allstarStreak;
+    }
     next.lastAwards.push("allstar");
   } else next.allstarStreak = 0;
 
