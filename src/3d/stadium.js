@@ -123,7 +123,7 @@ function addFence(scene,team){
   for(let i=0;i<segments;i++){
     const a=Math.PI+Math.PI*(i+.5)/segments,r=interpolateFence(a,fence),h=interpolateHeight(a,fence);
     const x=Math.cos(a)*r,z=Math.sin(a)*r;
-    const panel=box(scene,dark,x,h/2,z,r*Math.PI/segments+1,h,.55,-a);
+    const panel=box(scene,dark,x,h/2,z,r*Math.PI/segments+1,h,.55,-a-Math.PI/2);
     panel.material.side=THREE.DoubleSide;
   }
   addLine(scene,posts.map(p=>[p[0],p[1],p[2]]),cap,.55);
