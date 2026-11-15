@@ -9,9 +9,12 @@ export function evaluateTeamFit(player, team) {
   return { teamId: team.id, need, score, chance: Math.min(95, Math.max(8, 28 + need * 12 + score * 0.25)) };
 }
 
-export function runDraft(player) {
-  const rankings = TEAMS.map(team => ({ team, ...evaluateTeamFit(player, team) }))
-    .sort((a,b) => b.score - a.score);
+export function runDraft(player, preferredTeamId = null) {
+  const rankings = TEAMS.map(team => {
+    const evaluation = evaluateTeamFit(player, team);
+    const preferenceBonus = team.id === preferredTeamId ? 8 : 0;
+    return { team, ...evaluation, score: evaluation.score + preferenceBonus, preferenceBonus };
+  }).sort((a,b) => b.score - a.score);
   const roll = Math.random() * 100;
   const selected = rankings.find(item => roll <= item.chance) || rankings[0];
   return {
