@@ -21,6 +21,20 @@
     <footer class="footer">DIAMOND BASEBALL CAREER <span>·</span> ORIGINAL 3D BALLPARKS</footer>
   </div>
   <div id="toast-region" class="toast-region" aria-live="polite"></div>
-  <script type="module" src="./src/app.js"></script>
+  <script type="module">
+    let bootTimer;
+    try {
+      await Promise.race([
+        import("./src/app.js"),
+        new Promise((_, reject) => { bootTimer = setTimeout(() => reject(new Error("앱 시작 시간 초과")), 12000); })
+      ]);
+      clearTimeout(bootTimer);
+    } catch (error) {
+      clearTimeout(bootTimer);
+      const screen = document.querySelector("#screen");
+      if (screen) screen.innerHTML = '<div class="stadium-fallback"><b>게임 화면을 불러오지 못했습니다.</b><span>필수 파일이나 네트워크 연결에 문제가 있을 수 있습니다. 잠시 후 새로고침해 주세요.</span><button class="btn btn-primary" onclick="location.reload()">새로고침</button></div>';
+      console.error("DIAMOND boot failed", error);
+    }
+  </script>
 </body>
 </html>
