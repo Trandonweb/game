@@ -26,7 +26,7 @@ function render(){
       schedule(async()=>{
         if(state.screen!=="home")return;
         try{
-          const module=await import("./3d/stadium.js");
+          const module=await Promise.race([import("./3d/stadium.js"),new Promise((_,reject)=>setTimeout(()=>reject(new Error("3D 모듈 로딩 시간 초과")),12000))]);
           if(state.screen!=="home")return;
           stadiumCleanup=await module.mountStadium(document.querySelector("#stadium-showcase"),TEAMS,state.favoriteTeamId,id=>{
             state.favoriteTeamId=id;
