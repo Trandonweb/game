@@ -1,101 +1,25 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101820">
-<title>SIGNAL — 미확인 신호</title>
-<style>
-:root{color-scheme:dark;--bg:#101820;--panel:#17242d;--panel2:#1d2d37;--line:#344955;--ink:#e8f0ed;--muted:#9aadb1;--cyan:#75e0d0;--amber:#f0c477;--red:#e58c83;--green:#9de0a8}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#25414a 0,transparent 55%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;min-height:100vh}button,select{font:inherit}button{cursor:pointer;color:inherit}button:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}.wrap{max-width:1100px;margin:auto;padding:22px 24px 50px}.top{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:5px 0 18px}.brand{font:700 12px ui-monospace,monospace;letter-spacing:.22em;color:var(--cyan)}.brand span{color:var(--muted);font-weight:400}.lang{background:var(--panel);border:1px solid var(--line);padding:8px 10px;color:var(--ink);font-size:12px}.hero{min-height:calc(100vh - 100px);display:grid;grid-template-columns:1.05fr .95fr;gap:35px;align-items:center}.eyebrow{font:10px ui-monospace,monospace;letter-spacing:.2em;color:var(--amber)}h1{font:300 clamp(58px,9vw,112px)/.98 ui-monospace,monospace;letter-spacing:-.09em;margin:22px 0;color:var(--cyan)}.hero h2{font:400 23px/1.5 Georgia,serif;margin:0 0 15px}.hero p{max-width:520px;color:var(--muted);font-size:14px;line-height:2}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}.primary,.secondary{padding:13px 18px;border:1px solid var(--cyan);font-size:12px;font-weight:700}.primary{background:var(--cyan);color:#102027}.primary:hover{background:#a4f2e7}.secondary{background:transparent;color:var(--ink);border-color:var(--line)}.secondary:hover{border-color:var(--cyan)}.visual{height:390px;display:grid;place-items:center;position:relative}.radar{width:min(33vw,310px);aspect-ratio:1;border:1px solid #75e0d066;border-radius:50%;display:grid;place-items:center;position:relative;box-shadow:0 0 0 28px #75e0d00b,0 0 0 60px #75e0d008}.radar:before,.radar:after{content:"";position:absolute;border:1px solid #75e0d044;border-radius:50%;inset:15%}.radar:after{inset:31%}.radar b{font:300 60px ui-monospace,monospace;color:var(--amber)}.scan{position:absolute;width:50%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan));transform-origin:right;animation:scan 7s linear infinite;top:50%;left:0}@keyframes scan{to{transform:rotate(360deg)}}.signaltext{position:absolute;bottom:8%;right:3%;font:10px/2 ui-monospace,monospace;letter-spacing:.12em;color:var(--muted);text-align:right}.game{padding-top:28px}.gamehead{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}.leveltag{font:11px ui-monospace,monospace;letter-spacing:.14em;color:var(--amber)}.levelname{font:24px Georgia,serif;margin-top:6px}.status{font:10px ui-monospace,monospace;color:var(--muted);text-align:right}.layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px}.boardpanel,.side{background:linear-gradient(145deg,#1b2b35,#14212a);border:1px solid var(--line)}.boardpanel{padding:clamp(16px,3vw,30px)}.boardtop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:18px}.boardtop strong{font:11px ui-monospace,monospace;letter-spacing:.12em;color:var(--cyan)}.boardtop span{font:10px ui-monospace,monospace;color:var(--muted)}.board{width:min(100%,520px);margin:auto;display:grid;grid-template-columns:repeat(5,1fr);gap:7px;aspect-ratio:1}.cell{position:relative;aspect-ratio:1;border:1px solid #344b56;background:#14232c;border-radius:8px;display:grid;place-items:center;padding:0;min-width:0;transition:border-color .15s,background .15s}.cell.empty{background:#111d25;border-color:#233640;cursor:default}.cell.active:hover{border-color:var(--cyan);background:#1e3740}.cell .core{position:absolute;width:13px;height:13px;border-radius:50%;background:#64818a;z-index:2}.wire{position:absolute;background:#5c7b82;z-index:1;border-radius:3px}.wire.n,.wire.s{width:5px;height:50%}.wire.n{top:0}.wire.s{bottom:0}.wire.e,.wire.w{height:5px;width:50%}.wire.e{right:0}.wire.w{left:0}.cell.source,.cell.target{border-color:var(--amber);background:#302b22}.cell.source .core,.cell.target .core{background:var(--amber)}.cell.powered{background:#183a3b;border-color:#65d8bd;box-shadow:inset 0 0 20px #4be2bd12}.cell.powered .wire,.cell.powered .core{background:var(--cyan);box-shadow:0 0 8px #75e0d077}.endpoint{position:absolute;z-index:3;font:8px ui-monospace,monospace;letter-spacing:.05em;color:#fff;background:#17242d;padding:2px 4px;border-radius:3px;top:4px}.source .endpoint{left:4px}.target .endpoint{right:4px}.boardhint{text-align:center;color:var(--muted);font-size:11px;line-height:1.8;margin:17px 0 0}.side{padding:20px;height:max-content}.sidetitle{font:10px ui-monospace,monospace;letter-spacing:.16em;color:var(--cyan);border-bottom:1px solid var(--line);padding-bottom:13px}.instructions{font-size:12px;line-height:1.9;color:var(--muted);padding:15px 0;border-bottom:1px solid var(--line)}.legend{display:grid;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}.legendrow{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted)}.dot{width:10px;height:10px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px #f0c47777}.dot.cyan{background:var(--cyan);box-shadow:0 0 8px #75e0d077}.stats{padding:17px 0;border-bottom:1px solid var(--line)}.stat{display:flex;justify-content:space-between;font:10px ui-monospace,monospace;color:var(--muted);margin:8px 0}.stat b{color:var(--ink);font-weight:500}.sideactions{display:grid;gap:8px;padding-top:17px}.sideactions button{width:100%}.message{margin-top:18px;padding:14px;border:1px solid var(--line);background:#101d24;color:var(--muted);font-size:12px;line-height:1.8;min-height:75px}.message.success{border-color:#65b99e;color:#b5efd9}.hidden{display:none!important}.foot{text-align:center;color:#657b82;font:9px ui-monospace,monospace;letter-spacing:.15em;margin-top:36px}.complete{max-width:680px;margin:12vh auto;text-align:center;padding:40px 24px;border:1px solid var(--line);background:var(--panel)}.complete .symbol{font:70px ui-monospace,monospace;color:var(--cyan)}.complete h2{font:32px Georgia,serif;font-weight:400}.complete p{color:var(--muted);font-size:13px;line-height:2}.complete .actions{justify-content:center}
-@media(max-width:800px){.hero{grid-template-columns:1fr;gap:0;padding:35px 0}.visual{grid-row:1;height:230px}.radar{width:175px}.radar b{font-size:45px}.layout{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}.sidetitle,.instructions,.sideactions,.message{grid-column:1/-1}.legend,.stats{align-self:start}}
-@media(max-width:520px){.wrap{padding:15px 13px 35px}.hero{min-height:auto}.hero h2{font-size:20px}.visual{height:190px}.radar{width:140px}.board{gap:4px}.cell{border-radius:5px}.cell .core{width:9px;height:9px}.wire.n,.wire.s{width:4px}.wire.e,.wire.w{height:4px}.endpoint{font-size:6px;padding:1px 2px;top:2px}.boardpanel{padding:13px}.side{grid-template-columns:1fr}.sidetitle,.instructions,.sideactions,.message{grid-column:auto}.gamehead{align-items:flex-start}.levelname{font-size:20px}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b2b">
+  <meta name="description" content="나만의 야구 선수를 만들고 드래프트부터 은퇴까지 성장시키는 야구 커리어 게임">
+  <title>DIAMOND — Baseball Career</title>
+  <link rel="stylesheet" href="./assets/css/main.css">
 </head>
 <body>
-<main class="wrap">
-<header class="top"><div class="brand">S / G-NET <span> · SIGNAL CONTROL</span></div><select id="language" class="lang" aria-label="Language"><option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option><option value="zh">简体中文</option></select></header>
-<section id="home" class="hero">
-<div><div class="eyebrow" id="kicker">UNKNOWN TRANSMISSION / 07:42:16</div><h1>SIGNAL</h1><h2 id="heroTitle">끊어진 신호를 다시 연결하라.</h2><p id="heroDesc">폐쇄된 통신 시설에서 정체불명의 신호가 감지됐다. 각 구역의 회로 타일을 회전시켜 송신부에서 수신부까지 신호를 전달하라. 규칙은 단순하지만, 연결은 생각보다 까다롭다.</p><div class="actions"><button class="primary" id="start">접속 시작 →</button></div></div>
-<div class="visual"><div class="radar"><div class="scan"></div><b>?</b></div><div class="signaltext">INCOMING SIGNAL<br>ORIGIN: UNKNOWN<br>STATUS: UNSTABLE</div></div>
-</section>
-<section id="game" class="game hidden">
-<div class="gamehead"><div><div class="leveltag" id="levelTag">SECTOR 01 / 06</div><div class="levelname" id="levelName">첫 번째 접속</div></div><div class="status" id="status">SIGNAL: DISCONNECTED<br>ROTATIONS: 0</div></div>
-<div class="layout">
-<section class="boardpanel"><div class="boardtop"><strong id="boardLabel">CIRCUIT GRID / 5×5</strong><span id="goal">SOURCE → RECEIVER</span></div><div id="board" class="board" aria-label="Circuit puzzle board"></div><p class="boardhint" id="boardHint">회로 타일을 눌러 90° 회전시키세요. 송신부에서 수신부까지 길이 이어지면 성공합니다.</p></section>
-<aside class="side"><div class="sidetitle" id="sideTitle">MISSION BRIEF</div><div class="instructions" id="instructions">각 타일은 연결 방향을 가지고 있습니다. 이웃한 타일의 연결 방향이 서로 맞닿아야 신호가 흐릅니다. 빈 칸은 통과할 수 없습니다.</div>
-<div class="legend"><div class="legendrow"><i class="dot"></i><span id="sourceLegend">송신부 · 신호 시작</span></div><div class="legendrow"><i class="dot cyan"></i><span id="targetLegend">수신된 신호 경로</span></div></div>
-<div class="stats"><div class="stat"><span id="rotationLabel">회전 횟수</span><b id="rotationCount">0</b></div><div class="stat"><span id="connectedLabel">연결 상태</span><b id="connectedValue">끊김</b></div><div class="stat"><span id="levelCountLabel">완료 구역</span><b id="levelCount">0 / 6</b></div></div>
-<div class="sideactions"><button class="secondary" id="reset">현재 구역 초기화</button><button class="primary hidden" id="next">다음 구역 →</button></div><div class="message" id="message" aria-live="polite">신호가 불안정하다. 회로를 정렬하라.</div></aside>
-</div></section>
-<section id="complete" class="complete hidden"><div class="symbol">✓</div><div class="eyebrow" id="completeKicker">CONNECTION ESTABLISHED</div><h2 id="completeTitle">신호가 도착했다.</h2><p id="completeDesc">여섯 구역의 회로가 모두 연결되었다. 미확인 신호의 경로가 복구되었다.</p><div class="actions"><button class="primary" id="replay">처음부터 다시 하기</button></div></section>
-<footer class="foot">S / G-NET · SIGNAL CONTROL SYSTEM · NO HUMAN RECORDS FOUND</footer>
-</main>
-<script>
-const TEXT={
-ko:{kicker:"UNKNOWN TRANSMISSION / 07:42:16",heroTitle:"끊어진 신호를 다시 연결하라.",heroDesc:"폐쇄된 통신 시설에서 정체불명의 신호가 감지됐다. 각 구역의 회로 타일을 회전시켜 송신부에서 수신부까지 신호를 전달하라. 규칙은 단순하지만, 연결은 생각보다 까다롭다.",start:"접속 시작 →",sector:"구역",board:"CIRCUIT GRID / 5×5",goal:"송신부 → 수신부",hint:"회로 타일을 눌러 90° 회전시키세요. 송신부에서 수신부까지 길이 이어지면 성공합니다.",side:"MISSION BRIEF",instructions:"각 타일은 연결 방향을 가지고 있습니다. 이웃한 타일의 연결 방향이 서로 맞닿아야 신호가 흐릅니다. 빈 칸은 통과할 수 없습니다.",source:"송신부 · 신호 시작",target:"수신된 신호 경로",rotations:"회전 횟수",connected:"연결 상태",yes:"연결됨",no:"끊김",done:"완료 구역",reset:"현재 구역 초기화",next:"다음 구역 →",initial:"신호가 불안정하다. 회로를 정렬하라.",progress:"신호가 흐르고 있다. 마지막 연결을 확인하라.",solved:"신호 연결 성공! 이 구역을 복구했다.",all:"모든 구역을 복구했다. 수신 신호가 안정화되었다.",completeKicker:"CONNECTION ESTABLISHED",completeTitle:"신호가 도착했다.",completeDesc:"여섯 구역의 회로가 모두 연결되었다. 미확인 신호의 경로가 복구되었다.",replay:"처음부터 다시 하기",signal:"SIGNAL",disconnected:"DISCONNECTED",connectedStatus:"CONNECTED",rot:"ROTATIONS",levels:["첫 번째 접속","우회 회선","분기점","교차 통로","복잡한 회로","최종 수신"],messageSolved:"경로가 연결되었다. 다음 구역으로 이동할 수 있다.",messageInitial:"신호가 불안정하다. 회로를 정렬하라."},
-en:{kicker:"UNKNOWN TRANSMISSION / 07:42:16",heroTitle:"Reconnect the broken signal.",heroDesc:"An unidentified signal has been detected inside an abandoned communications facility. Rotate the circuit tiles to carry the signal from the source to the receiver. The rules are simple. The connections are not.",start:"Establish connection →",sector:"SECTOR",board:"CIRCUIT GRID / 5×5",goal:"SOURCE → RECEIVER",hint:"Tap a circuit tile to rotate it 90°. Connect a continuous path from the source to the receiver.",side:"MISSION BRIEF",instructions:"Every tile has connection ports. Neighboring ports must face each other for the signal to pass. Empty cells cannot carry a signal.",source:"Source · signal origin",target:"Powered signal path",rotations:"Rotations",connected:"Connection",yes:"Connected",no:"Broken",done:"Sectors cleared",reset:"Reset this sector",next:"Next sector →",initial:"The signal is unstable. Align the circuits.",progress:"The signal is flowing. Check the final connection.",solved:"Signal connected! This sector is restored.",all:"All sectors restored. The incoming signal is stable.",completeKicker:"CONNECTION ESTABLISHED",completeTitle:"The signal has arrived.",completeDesc:"All six circuit sectors are connected. The unknown signal path has been restored.",replay:"Play again",signal:"SIGNAL",disconnected:"DISCONNECTED",connectedStatus:"CONNECTED",rot:"ROTATIONS",levels:["First Contact","Detour","Branch Point","Cross Passage","Complex Circuit","Final Receiver"],messageSolved:"The path is connected. You can proceed to the next sector.",messageInitial:"The signal is unstable. Align the circuits."},
-ja:{kicker:"未知の通信 / 07:42:16",heroTitle:"途切れた信号をつなぎ直せ。",heroDesc:"閉鎖された通信施設で正体不明の信号が検出された。回路タイルを回転させ、送信部から受信部まで信号を届けよう。ルールは簡単だが、接続は一筋縄ではいかない。",start:"接続を開始 →",sector:"セクター",board:"回路グリッド / 5×5",goal:"送信部 → 受信部",hint:"回路タイルをタップして90°回転。送信部から受信部まで道がつながれば成功。",side:"ミッション概要",instructions:"各タイルには接続方向がある。隣のタイル同士の接続口が向かい合うと信号が流れる。空白のマスは通過できない。",source:"送信部 · 信号の始点",target:"信号が届いた経路",rotations:"回転回数",connected:"接続状態",yes:"接続済み",no:"未接続",done:"復旧セクター",reset:"このセクターをリセット",next:"次のセクター →",initial:"信号が不安定だ。回路を整列させよう。",progress:"信号が流れている。最後の接続を確認しよう。",solved:"信号接続成功！このセクターは復旧した。",all:"すべてのセクターが復旧し、信号が安定した。",completeKicker:"接続確立",completeTitle:"信号が届いた。",completeDesc:"6つの回路セクターがすべて接続された。未知の信号経路が復旧した。",replay:"最初からプレイ",signal:"信号",disconnected:"未接続",connectedStatus:"接続済み",rot:"回転",levels:["最初の接続","迂回回線","分岐点","交差通路","複雑な回路","最終受信"],messageSolved:"経路が接続された。次のセクターへ進める。",messageInitial:"信号が不安定だ。回路を整列させよう。"},
-zh:{kicker:"未知传输 / 07:42:16",heroTitle:"重新连接中断的信号。",heroDesc:"一座废弃通信设施检测到未知信号。旋转电路模块，让信号从发送端抵达接收端。规则很简单，但连接并不容易。",start:"开始连接 →",sector:"区域",board:"电路网格 / 5×5",goal:"发送端 → 接收端",hint:"点击电路模块可旋转90°。将发送端与接收端连接起来即可完成。",side:"任务简报",instructions:"每个模块都有连接方向。相邻模块的接口必须彼此相对，信号才能通过。空白格无法传输信号。",source:"发送端 · 信号起点",target:"已通电路径",rotations:"旋转次数",connected:"连接状态",yes:"已连接",no:"中断",done:"已修复区域",reset:"重置当前区域",next:"下一区域 →",initial:"信号不稳定。请调整电路。",progress:"信号正在流动。检查最后的连接。",solved:"信号连接成功！该区域已修复。",all:"所有区域均已修复，信号恢复稳定。",completeKicker:"连接已建立",completeTitle:"信号已抵达。",completeDesc:"六个电路区域全部连接，未知信号路径已恢复。",replay:"重新开始",signal:"信号",disconnected:"未连接",connectedStatus:"已连接",rot:"旋转",levels:["首次接触","迂回线路","分支点","交叉通道","复杂电路","最终接收"],messageSolved:"路径已连接。可以前往下一区域。",messageInitial:"信号不稳定。请调整电路。"}
-};
-const ROUTES=[
-[[2,0],[2,1],[2,2],[2,3],[2,4]],
-[[2,0],[2,1],[1,1],[1,2],[1,3],[2,3],[2,4]],
-[[4,0],[3,0],[2,0],[2,1],[2,2],[1,2],[0,2],[0,3],[0,4]],
-[[0,0],[1,0],[2,0],[2,1],[2,2],[3,2],[4,2],[4,3],[4,4]],
-[[4,0],[3,0],[2,0],[2,1],[1,1],[0,1],[0,2],[1,2],[2,2],[3,2],[3,3],[3,4],[4,4]],
-[[4,0],[3,0],[2,0],[1,0],[1,1],[1,2],[2,2],[3,2],[3,3],[2,3],[1,3],[0,3],[0,4],[1,4],[2,4],[3,4],[4,4]]
-];
-const DIRS=["n","e","s","w"];
-const $=id=>document.getElementById(id);
-let lang="ko",level=0,tiles=[],initial=[],rotations=0,cleared=0,solved=false;
-function t(){return TEXT[lang]}
-function rotatePort(p,n){return DIRS[(DIRS.indexOf(p)+n)%4]}
-function baseShape(prev,next){
- const ports=[];
- if(prev){const [dr,dc]=[prev[0]-next[0],prev[1]-next[1]];void dr;void dc}
- return ports;
-}
-function direction(a,b){const dr=b[0]-a[0],dc=b[1]-a[1];if(dr===-1)return"n";if(dr===1)return"s";if(dc===1)return"e";return"w"}
-function shapeFor(path,i){let p=[];if(i>0)p.push(direction(path[i],path[i-1]));if(i<path.length-1)p.push(direction(path[i],path[i+1]));return p}
-function rotatePorts(ports,n){return ports.map(p=>rotatePort(p,n))}
-function startLevel(){
- solved=false;rotations=0;const path=ROUTES[level];
- tiles=Array.from({length:25},()=>null);
- path.forEach((coord,i)=>{const idx=coord[0]*5+coord[1],base=shapeFor(path,i);let scramble=(Math.floor(Math.random()*3)+1)%4;tiles[idx]={base,turn:scramble,ports:rotatePorts(base,scramble),route:true,kind:i===0?"source":i===path.length-1?"target":"wire"};});
- initial=tiles.map(x=>x?{...x,base:[...x.base],ports:[...x.ports]}:null);
- $("levelTag").textContent=t().sector+" "+String(level+1).padStart(2,"0")+" / 06";
- $("levelName").textContent=t().levels[level];
- $("rotationCount").textContent="0";$("levelCount").textContent=cleared+" / 6";
- $("message").className="message";$("message").textContent=t().messageInitial;
- $("next").classList.add("hidden");render();
-}
-function isPowered(){
- const start=tiles.findIndex(x=>x&&x.kind==="source"),target=tiles.findIndex(x=>x&&x.kind==="target");
- const seen=new Set([start]),queue=[start];
- while(queue.length){const idx=queue.shift(),r=Math.floor(idx/5),c=idx%5,ports=tiles[idx]?.ports||[];
-  for(const p of ports){let nr=r,nc=c;if(p==="n")nr--;if(p==="s")nr++;if(p==="e")nc++;if(p==="w")nc--;if(nr<0||nr>4||nc<0||nc>4)continue;const ni=nr*5+nc;if(seen.has(ni)||!tiles[ni])continue;const opposite=({n:"s",s:"n",e:"w",w:"e"})[p];if(tiles[ni].ports.includes(opposite)){seen.add(ni);queue.push(ni)}}
- }
- return {connected:seen.has(target),seen};
-}
-function render(){
- const board=$("board");board.innerHTML="";const power=isPowered();
- tiles.forEach((tile,i)=>{const b=document.createElement("button");b.type="button";b.className="cell"+(!tile?" empty":" active");b.setAttribute("aria-label",tile?(tile.kind==="source"?"Source":tile.kind==="target"?"Receiver":"Rotate circuit tile"):"Empty cell");if(tile){if(tile.kind==="source")b.classList.add("source");if(tile.kind==="target")b.classList.add("target");if(power.seen.has(i))b.classList.add("powered");tile.ports.forEach(p=>{const arm=document.createElement("i");arm.className="wire "+p;b.appendChild(arm)});const core=document.createElement("i");core.className="core";b.appendChild(core);if(tile.kind==="source"||tile.kind==="target"){const tag=document.createElement("span");tag.className="endpoint";tag.textContent=tile.kind==="source"?"IN":"OUT";b.appendChild(tag)}b.addEventListener("click",()=>turnTile(i))}
- else b.disabled=true;board.appendChild(b)});
- $("status").innerHTML=t().signal+": "+(power.connected?t().connectedStatus:t().disconnected)+"<br>"+t().rot+": "+rotations;
- $("connectedValue").textContent=power.connected?t().yes:t().no;$("connectedValue").style.color=power.connected?"var(--cyan)":"var(--muted)";
- if(power.connected&&!solved){solved=true;cleared=Math.max(cleared,level+1);$("levelCount").textContent=cleared+" / 6";$("message").className="message success";$("message").textContent=level===5?t().all:t().messageSolved;$("next").classList.remove("hidden");}
-}
-function turnTile(i){if(solved||!tiles[i])return;const tile=tiles[i];tile.turn=(tile.turn+1)%4;tile.ports=rotatePorts(tile.base,tile.turn);rotations++;$("rotationCount").textContent=rotations;$("message").className="message";$("message").textContent=t().progress;render()}
-function setLanguage(value){lang=TEXT[value]?value:"ko";document.documentElement.lang=lang;const x=t();$("kicker").textContent=x.kicker;$("heroTitle").textContent=x.heroTitle;$("heroDesc").textContent=x.heroDesc;$("start").textContent=x.start;$("boardLabel").textContent=x.board;$("goal").textContent=x.goal;$("boardHint").textContent=x.hint;$("sideTitle").textContent=x.side;$("instructions").textContent=x.instructions;$("sourceLegend").textContent=x.source;$("targetLegend").textContent=x.target;$("rotationLabel").textContent=x.rotations;$("connectedLabel").textContent=x.connected;$("connectedValue").textContent=solved?x.yes:x.no;$("levelCountLabel").textContent=x.done;$("reset").textContent=x.reset;$("next").textContent=x.next;$("completeKicker").textContent=x.completeKicker;$("completeTitle").textContent=x.completeTitle;$("completeDesc").textContent=x.completeDesc;$("replay").textContent=x.replay;if(!$("game").classList.contains("hidden")){if(solved)$("message").textContent=level===5?x.all:x.messageSolved;else $("message").textContent=x.messageInitial;$("levelTag").textContent=x.sector+" "+String(level+1).padStart(2,"0")+" / 06";$("levelName").textContent=x.levels[level];render()} }
-function startGame(){level=0;cleared=0;$("home").classList.add("hidden");$("complete").classList.add("hidden");$("game").classList.remove("hidden");startLevel()}
-function nextLevel(){if(level<5){level++;startLevel()}else{$("game").classList.add("hidden");$("complete").classList.remove("hidden");$("completeDesc").textContent=t().completeDesc}}
-$("start").addEventListener("click",startGame);
-$("reset").addEventListener("click",()=>{if(solved)return;tiles=initial.map(x=>x?{...x,base:[...x.base],ports:[...x.ports]}:null);rotations=0;$("rotationCount").textContent="0";$("message").className="message";$("message").textContent=t().messageInitial;render()});
-$("next").addEventListener("click",nextLevel);
-$("replay").addEventListener("click",()=>{ $("complete").classList.add("hidden");startGame()});
-$("language").addEventListener("change",e=>setLanguage(e.target.value));
-setLanguage("ko");
-</script>
-</body></html>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="DIAMOND 홈"><span class="brand-mark">D</span><span>DIAMOND<small>BASEBALL CAREER</small></span></a>
+      <div class="topbar-right"><span id="save-indicator" class="save-indicator">저장 준비</span><button id="reset-game" class="text-button" type="button">새 게임</button></div>
+    </header>
+    <main id="screen" class="screen" aria-live="polite">
+      <section class="loading"><div class="loader"></div><p>구장을 준비하고 있습니다.</p></section>
+    </main>
+    <footer class="footer">DIAMOND BASEBALL CAREER <span>·</span> FIRST PLAYABLE BUILD</footer>
+  </div>
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
