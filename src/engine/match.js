@@ -133,7 +133,7 @@ export function resolvePitchAction(match, player, pitchType, target) {
   } else if (!swing) {
     match.strikes++; match.lastResult="루킹 스트라이크! 타자가 지켜봤습니다.";
   } else if (Math.random() < .28+(stuff-60)*.003+(pitchType==="slider"?.08:0)) {
-    match.strikes++; match.lastResult="헛스윙! "+pitchType+"로 타자를 속였습니다."; match.strikeouts++;
+    match.strikes++; match.lastResult="헛스윙! "+pitchType+"로 타자를 속였습니다.";
   } else if (Math.random() < .22+(velocity-60)*.002) {
     match.outs++; match.lastResult="타구! 수비수가 잡아 아웃 처리했습니다.";
   } else {
@@ -148,7 +148,16 @@ export function resolvePitchAction(match, player, pitchType, target) {
 
 export function continueLiveMatch(match, player) {
   if (match.finished || match.phase !== "break") return match;
+  if (match.half === "bottom") {
+    match.inning++;
+    if (match.inning > 3) {
+      match.finished = true; match.phase = "finished";
+      match.lastResult = match.userRuns > match.opponentRuns ? "3이닝 종료. 승리!" : match.userRuns < match.opponentRuns ? "3이닝 종료. 패배." : "3이닝 종료. 무승부.";
+      return match;
+    }
+    match.half = "top";
+  }
   nextAtBat(match,player);
-  match.lastResult = match.half==="top" ? match.inning+"회 초 시작. 공격을 준비하세요." : match.inning+"회 말 시작.";
+  match.lastResult = match.inning+"회 초 시작. 플레이를 이어가세요.";
   return match;
 }
