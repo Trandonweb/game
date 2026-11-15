@@ -4,22 +4,40 @@ import { positionFit, calculateOverall } from "./player.js";
 export function evaluateTeamFit(player, team) {
   const need = team.needs[player.position] || 0;
   const fit = positionFit(player, player.position);
-  const archetypeBonus = player.isTwp ? 3 : 0;
-  const score = Math.round(calculateOverall(player) * 0.55 + need * 7 + archetypeBonus);
-  return { teamId: team.id, need, score, chance: Math.min(95, Math.max(8, 28 + need * 12 + score * 0.25)) };
+  const overall = calculateOverall(player);
+  // 필요도는 평가에 반영하되, 지명 결과를 사실상 결정하지 않도록 비중을 제한한다.
+  const score = Math.round(overall * 0.72 + need * 2.2 + (fit * 4) + (player.isTwp ? 2 : 0));
+  return { teamId: team.id, need, score, chance: 0 };
 }
 
 export function runDraft(player, preferredTeamId = null) {
-  const rankings = TEAMS.map(team => {
+  const evaluations = TEAMS.map(team => {
     const evaluation = evaluateTeamFit(player, team);
-    const preferenceBonus = team.id === preferredTeamId ? 8 : 0;
-    return { team, ...evaluation, score: evaluation.score + preferenceBonus, chance: Math.min(97, evaluation.chance + preferenceBonus * 1.4), preferenceBonus };
-  }).sort((a,b) => b.score - a.score);
-  const roll = Math.random() * 100;
-  const selected = rankings.find(item => roll <= item.chance) || rankings[0];
+    // 선호 구단 보너스는 분명히 주되, 지명을 보장하지는 않는다.
+    const preferenceMultiplier = team.id === preferredTeamId ? 1.55 : 1;
+    const needMultiplier = 1 + evaluation.need * 0.075;
+    const qualityMultiplier = 0.85 + Math.max(0, evaluation.score) / 150;
+    return {
+      team,
+      ...evaluation,
+      weight: preferenceMultiplier * needMultiplier * qualityMultiplier,
+      preferenceBonus: team.id === preferredTeamId ? 1 : 0
+    };
+  });
+  const totalWeight = evaluations.reduce((sum, item) => sum + item.weight, 0);
+  let roll = Math.random() * totalWeight;
+  let selected = evaluations[evaluations.length - 1];
+  for (const item of evaluations) {
+    roll -= item.weight;
+    if (roll <= 0) { selected = item; break; }
+  }
+  const rankings = evaluations
+    .map(item => ({ ...item, chance: Math.round(item.weight / totalWeight * 1000) / 10 }))
+    .sort((a, b) => b.chance - a.chance);
+  const selectedTeam = TEAMS.find(team => team.id === selected.team.id) || selected.team;
   return {
-    team: selected.team,
+    team: selectedTeam,
     rankings,
-    resultText: selected.team.name + "이(가) " + player.name + " 선수를 지명했습니다."
+    resultText: selectedTeam.name + "이(가) " + player.name + " 선수를 지명했습니다."
   };
 }
