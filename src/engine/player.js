@@ -1,20 +1,42 @@
 import { BATTER_ATTRIBUTES, PITCHER_ATTRIBUTES, POSITION_GROUPS } from "../data/config.js";
 
+const BATTER_PROFILES = {
+  "교타형": [78, 45, 72, 55, 48, 37],
+  "거포형": [50, 90, 42, 40, 58, 55],
+  "출루형": [60, 48, 90, 45, 47, 45],
+  "호타준족형": [62, 60, 48, 78, 47, 40]
+};
+const PITCHER_PROFILES = {
+  "강속구형": [85, 50, 72, 55, 35, 38],
+  "제구형": [65, 85, 58, 50, 35, 42],
+  "변화구형": [65, 55, 80, 48, 55, 32],
+  "완급조절형": [65, 68, 60, 68, 35, 39]
+};
+
+export function canBeTwp(position) {
+  return ["SP", "RP", "CP", "DH"].includes(position);
+}
+
 export function getPlayerAttributes(player) {
   if (player.isTwp) return [...BATTER_ATTRIBUTES, ...PITCHER_ATTRIBUTES];
   return player.role === "pitcher" ? PITCHER_ATTRIBUTES : BATTER_ATTRIBUTES;
 }
 
+function makeStats(attributes, profile) {
+  return Object.fromEntries(attributes.map((attribute, index) => [attribute.key, profile[index]]));
+}
+
 export function createPlayerProfile(input) {
   const isPitcher = ["SP", "RP", "CP"].includes(input.position);
   const role = isPitcher ? "pitcher" : "batter";
-  const primary = role === "pitcher" ? PITCHER_ATTRIBUTES : BATTER_ATTRIBUTES;
-  const secondary = role === "pitcher" ? BATTER_ATTRIBUTES : PITCHER_ATTRIBUTES;
-  const bases = [60, 60, 40, 70, 65, 40];
-  const primaryStats = Object.fromEntries(primary.map((a, i) => [a.key, bases[i]]));
-  const secondaryStats = input.isTwp
-    ? Object.fromEntries(secondary.map((a, i) => [a.key, bases[i]]))
-    : null;
+  const isTwp = Boolean(input.isTwp);
+  if (isTwp && !canBeTwp(input.position)) {
+    throw new Error("TWP는 투수 또는 DH 포지션에서만 선택할 수 있습니다.");
+  }
+  const batterStats = makeStats(BATTER_ATTRIBUTES, BATTER_PROFILES[input.batterType] || BATTER_PROFILES["교타형"]);
+  const pitcherStats = makeStats(PITCHER_ATTRIBUTES, PITCHER_PROFILES[input.pitcherType] || PITCHER_PROFILES["강속구형"]);
+  const primaryStats = isPitcher ? pitcherStats : batterStats;
+  const secondaryStats = isTwp ? (isPitcher ? batterStats : pitcherStats) : null;
   return {
     id: crypto.randomUUID(),
     name: input.name.trim(),
@@ -22,15 +44,15 @@ export function createPlayerProfile(input) {
     position: input.position,
     originalPosition: input.position,
     role,
-    isTwp: Boolean(input.isTwp),
+    isTwp,
     batterType: input.batterType || null,
     pitcherType: input.pitcherType || null,
     archetype: isPitcher ? input.pitcherType : input.batterType,
     level: 1,
     experience: 0,
     attributes: primaryStats,
-    pitcherAttributes: input.isTwp ? (isPitcher ? primaryStats : secondaryStats) : null,
-    secondaryAttributes: input.isTwp ? secondaryStats : null,
+    pitcherAttributes: isTwp ? pitcherStats : null,
+    secondaryAttributes: secondaryStats,
     developmentChoices: [],
     developmentConfirmed: false,
     overall: 0,
@@ -46,16 +68,14 @@ export function createPlayerProfile(input) {
 export function applyDevelopment(player, choices) {
   if (player.developmentConfirmed) throw new Error("초기 능력치 배분은 이미 확정되었습니다.");
   if (choices.length !== 3) throw new Error("능력치 배분 기회는 총 3회입니다.");
-  const allowed = new Set(getPlayerAttributes(player).map(a => a.key));
+  const allowed = new Set(getPlayerAttributes(player).map(attribute => attribute.key));
   const next = structuredClone(player);
   for (const key of choices) {
     if (!allowed.has(key)) throw new Error("선택할 수 없는 능력치입니다.");
     if (Object.hasOwn(next.attributes, key)) next.attributes[key] += 5;
     else if (next.secondaryAttributes && Object.hasOwn(next.secondaryAttributes, key)) next.secondaryAttributes[key] += 5;
   }
-  if (next.isTwp && next.secondaryAttributes) {
-    next.pitcherAttributes = next.role === "pitcher" ? next.attributes : next.secondaryAttributes;
-  }
+  if (next.isTwp) next.pitcherAttributes = next.role === "pitcher" ? next.attributes : next.secondaryAttributes;
   next.developmentChoices = [...choices];
   next.developmentConfirmed = true;
   next.overall = calculateOverall(next);
@@ -100,6 +120,7 @@ export function gainExperience(player, amount) {
 
 export function getEligiblePositions(player) {
   const pos = player.originalPosition;
+  if (pos === "DH") return ["DH"];
   if (POSITION_GROUPS.OF.includes(pos)) return [...POSITION_GROUPS.OF];
   if (POSITION_GROUPS.CORNERS.includes(pos)) return [...POSITION_GROUPS.CORNERS];
   if (POSITION_GROUPS.MIDDLE.includes(pos)) return [...POSITION_GROUPS.MIDDLE];
