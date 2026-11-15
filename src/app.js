@@ -30,6 +30,7 @@ function render(){
           if(state.screen!=="home")return;
           stadiumCleanup=await module.mountStadium(document.querySelector("#stadium-showcase"),TEAMS,state.favoriteTeamId,id=>{
             state.favoriteTeamId=id;
+            const preferenceSelect=document.querySelector("#preferred-team");if(preferenceSelect)preferenceSelect.value=id;
             document.querySelectorAll("[data-favorite-team]").forEach(el=>el.classList.toggle("selected",el.dataset.favoriteTeam===id));
             const picked=TEAMS.find(t=>t.id===id);
             toast("선호 구단을 "+picked.name+"으로 선택했습니다.");
