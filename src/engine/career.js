@@ -1,5 +1,6 @@
 import { CARD_TYPES, createCard, addCardAwardBonus } from "./cards.js";
 import { gainExperience } from "./player.js";
+import { getTeam } from "../data/teams.js";
 
 export function createCareer(player, teamId, initialCard) {
   return {
@@ -96,7 +97,7 @@ export function finishSeason(career) {
   if (qualifies && performance.quality >= 72) {
     next.allstarStreak++;
     let card = next.cards.find(c => c.typeId === "allstar");
-    if (!card) { card = createCard(next.player, "allstar", next.season, { consecutiveCount: next.allstarStreak }); next.cards.push(card); }
+    if (!card) { card = createCard(next.player, "allstar", next.season, { consecutiveCount: next.allstarStreak, variant: getTeam(next.teamId).allstarDivision }); next.cards.push(card); }
     else {
       card.consecutiveCount = next.allstarStreak;
       card.baseAttributes = reviewBase(card, performance);
