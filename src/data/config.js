@@ -5,7 +5,7 @@ export const GAME = {
   attributeUpgradePoints: 3,
   attributeUpgradeValue: 5,
   playerLevelCardMilestones: [5, 10, 15, 20],
-  positions: ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "SP", "RP", "CP"],
+  positions: ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH", "SP", "RP", "CP"],
   batterTypes: ["교타형", "거포형", "출루형", "호타준족형"],
   pitcherTypes: ["강속구형", "제구형", "변화구형", "완급조절형"],
   modes: ["player", "team"],
@@ -22,7 +22,8 @@ export const POSITION_GROUPS = {
 
 export const POSITION_LABELS = {
   C: "포수", "1B": "1루수", "2B": "2루수", "3B": "3루수", SS: "유격수",
-  LF: "좌익수", CF: "중견수", RF: "우익수", SP: "선발투수", RP: "중계투수", CP: "마무리투수"
+  LF: "좌익수", CF: "중견수", RF: "우익수", DH: "지명타자",
+  SP: "선발투수", RP: "중계투수", CP: "마무리투수"
 };
 
 export const BATTER_ATTRIBUTES = [
