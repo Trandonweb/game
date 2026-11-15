@@ -210,7 +210,7 @@ export function openFreeAgency(career) {
   }
   const offers = getTeamOffers(career);
   career.freeAgencyOffers = offers;
-  addCareerLog(career, "FA 시장 참가", offers.length + "개 구단에서 영입 제안을 받았습니다."");
+  addCareerLog(career, "FA 시장 참가", offers.length + "개 구단에서 영입 제안을 받았습니다.");
   return career;
 }
 
