@@ -67,7 +67,8 @@ export function createPlayerProfile(input) {
 
 export function applyDevelopment(player, choices) {
   if (player.developmentConfirmed) throw new Error("초기 능력치 배분은 이미 확정되었습니다.");
-  if (choices.length !== 3) throw new Error("능력치 배분 기회는 총 3회입니다.");
+  const maxChoices = player.isTwp ? 6 : 3;
+  if (choices.length !== maxChoices) throw new Error("능력치 배분 기회를 모두 사용해 주세요. (일반 3회 / TWP 6회)");
   const allowed = new Set(getPlayerAttributes(player).map(attribute => attribute.key));
   const next = structuredClone(player);
   for (const key of choices) {
