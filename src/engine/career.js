@@ -82,7 +82,7 @@ export function finishSeason(career) {
   if (qualifies && next.player.level >= 15) award(next, "star4");
   if (qualifies && next.player.level >= 20) award(next, "star5");
 
-  const national = qualifies && performance.quality >= 78 && next.nationalSelectionsThisYear < 2;
+  const national = qualifies && performance.quality >= 74 && next.nationalSelectionsThisYear < 2;
   if (national) {
     next.nationalSelectionsThisYear++;
     if (!next.cards.some(card => card.typeId === "national")) next.cards.push(createCard(next.player, "national", next.season));
