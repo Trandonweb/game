@@ -124,7 +124,7 @@ export function finishSeason(career) {
     next.lastAwards.push("icon");
   }
 
-  if (qualifies && performance.quality >= 85 && !isPitcher && next.goldGloveAwards < 10) {
+  if (qualifies && performance.quality >= 85 && next.goldGloveAwards < 10) {
     next.goldGloveAwards++;
     let card = next.cards.find(c => c.typeId === "goldglove");
     if (!card) { card = createCard(next.player, "goldglove", next.season); next.cards.push(card); }
