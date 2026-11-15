@@ -35,6 +35,7 @@ export function createCard(player, typeId, season, options = {}) {
     id: crypto.randomUUID(),
     playerId: player.id,
     typeId,
+    variant: typeId === "allstar" ? (options.variant || "dream") : null,
     name: type.name,
     season,
     baseAttributes: baseStatsFor(player, typeId),
