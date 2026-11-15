@@ -115,3 +115,45 @@
 .home-career-note{margin:4px 0 24px;padding:18px 20px;border:1px solid #34495f;border-radius:13px;background:linear-gradient(110deg,#17283a,#101b29)}
 .home-career-note h2{margin:7px 0;font-size:17px}
 .home-career-note p{margin:0;color:var(--muted);font-size:11px;line-height:1.75}
+
+/* Session resume and playable baseball match */
+.resume-panel{max-width:620px;margin:7vh auto;padding:clamp(20px,5vw,34px)}
+.resume-player{display:grid;gap:6px;padding:17px;margin-top:20px;border:1px solid #40566d;border-radius:11px;background:#0d1928}
+.resume-player b{font-size:18px}.resume-player span{font-size:11px;color:var(--muted)}
+.match-launch{max-width:680px;margin-top:20px}
+.live-match-screen{max-width:1040px;margin:0 auto}
+.live-match-header{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:14px 0 20px}
+.live-score{display:flex;align-items:center;gap:20px;padding:12px 18px;border:1px solid #40566d;border-radius:12px;background:#111f2f;min-width:220px}
+.live-score>div{display:grid;gap:2px;text-align:center}
+.live-score small{font-size:9px;color:#9fb1c3}
+.live-score b{font-size:25px;font-variant-numeric:tabular-nums}
+.live-score .score-center strong{font-size:13px;color:#f0c878}
+.live-field-panel{overflow:hidden;border:1px solid #40566d;border-radius:15px;background:linear-gradient(#15283a,#0c1725)}
+.field-topline,.field-bottomline{display:flex;justify-content:space-between;gap:12px;padding:11px 15px;color:#9fb1c3;font-size:9px;letter-spacing:.08em}
+.diamond{position:relative;height:clamp(260px,46vw,420px);overflow:hidden;background:radial-gradient(ellipse at 50% 100%,#507b4c 0 35%,#315a3d 65%,#183b35 100%)}
+.diamond:before{content:"";position:absolute;width:48%;aspect-ratio:1;left:26%;top:18%;transform:rotate(45deg);background:linear-gradient(135deg,#b68b61,#d4b18a);border:2px solid #e5d4b9;box-shadow:0 0 0 16px #ffffff08}
+.diamond:after{content:"";position:absolute;left:50%;top:42%;width:17%;height:2px;background:#fff8;transform:rotate(45deg);transform-origin:left}
+.base{position:absolute;z-index:2;width:13px;height:13px;background:#f4f0dc;border:1px solid #8c887c;transform:rotate(45deg)}
+.base-second{left:calc(50% - 6px);top:27%}.base-third{left:31%;top:49%}.base-first{right:31%;top:49%}.base-home{left:calc(50% - 6px);top:75%;transform:rotate(45deg) scale(.9)}
+.base.occupied{background:#f1c56f;box-shadow:0 0 13px #f1c56f}
+.mound{position:absolute;z-index:2;left:calc(50% - 17px);top:46%;width:34px;height:22px;border-radius:50%;background:#a97850;border:1px solid #e2c29d}
+.pitcher-figure,.batter-figure{position:absolute;z-index:3;width:11px;height:32px;border-radius:8px;background:#e8edf3;box-shadow:0 0 0 2px #1a2a3a}
+.pitcher-figure{left:calc(50% - 5px);top:42%}
+.batter-figure{left:calc(50% + 13%);top:69%;background:#e7b968}
+.ball-marker{position:absolute;z-index:5;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px #ffffff45,0 0 18px #fff;transform:translate(-50%,-50%)}
+.live-action-panel{margin-top:15px}
+.live-result{display:flex;gap:14px;align-items:baseline;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.live-result b{white-space:nowrap;color:#f0c878;font-size:11px}
+.live-result p{margin:0;font-size:12px;line-height:1.6}
+.live-instruction{margin:13px 0;color:#d9e4ef;font-size:12px}
+.count-row{display:flex;gap:8px;margin:12px 0}
+.count-row span{padding:7px 12px;border:1px solid #40566d;border-radius:7px;background:#0e1a29;color:#e9f0f7;font-size:11px;font-weight:800}
+.live-controls,.pitch-options{display:flex;flex-wrap:wrap;gap:8px}
+.live-controls .btn,.pitch-options .btn{flex:1 1 145px;min-height:48px}
+@media(max-width:600px){
+ .live-match-header{align-items:stretch;flex-direction:column}
+ .live-score{justify-content:space-around}
+ .diamond{height:280px}
+ .live-result{align-items:flex-start;flex-direction:column;gap:5px}
+ .live-controls .btn,.pitch-options .btn{flex-basis:calc(50% - 8px);padding:11px 8px}
+}
