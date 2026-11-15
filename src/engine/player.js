@@ -97,3 +97,28 @@ export function gainExperience(player, amount) {
   next.overall = calculateOverall(next);
   return { player: next, gained };
 }
+
+export function getEligiblePositions(player) {
+  const pos = player.originalPosition;
+  if (POSITION_GROUPS.OF.includes(pos)) return [...POSITION_GROUPS.OF];
+  if (POSITION_GROUPS.CORNERS.includes(pos)) return [...POSITION_GROUPS.CORNERS];
+  if (POSITION_GROUPS.MIDDLE.includes(pos)) return [...POSITION_GROUPS.MIDDLE];
+  if (pos === "SP") return ["SP", "RP", "CP"];
+  if (pos === "CP") return ["CP", "RP"];
+  if (pos === "RP") return ["RP"];
+  return [pos];
+}
+
+export function getPositionAdjustedOverall(player, position = player.position) {
+  return Math.round(calculateOverall(player) * positionFit(player, position));
+}
+
+export function switchPosition(player, position) {
+  if (!getEligiblePositions(player).includes(position)) {
+    throw new Error("이 선수는 해당 포지션으로 변경할 수 없습니다.");
+  }
+  const next = structuredClone(player);
+  next.position = position;
+  next.positionPenalty = positionFit(next, position);
+  return next;
+}
