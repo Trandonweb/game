@@ -14,8 +14,8 @@ export function runDraft(player, preferredTeamId = null) {
   const evaluations = TEAMS.map(team => {
     const evaluation = evaluateTeamFit(player, team);
     // 선호 구단 보너스는 분명히 주되, 지명을 보장하지는 않는다.
-    const preferenceMultiplier = team.id === preferredTeamId ? 1.55 : 1;
-    const needMultiplier = 1 + evaluation.need * 0.075;
+    const preferenceMultiplier = team.id === preferredTeamId ? 1.7 : 1;
+    const needMultiplier = 1 + evaluation.need * 0.045;
     const qualityMultiplier = 0.85 + Math.max(0, evaluation.score) / 150;
     return {
       team,
