@@ -36,3 +36,22 @@
 @media(max-width:560px){.stadium-head{align-items:flex-start;flex-direction:column;padding:15px}.park-team-picker{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}.park-team{padding:8px}.stadium-canvas-wrap{height:285px}}
 
 .player-card.card-allstar-nanum{background:linear-gradient(145deg,#ffc0ad,#e47a61 55%,#713b42);border-color:#ffd6c9}
+
+/* Clear, baseball-oriented player attribute allocation */
+.allocation-panel{background:linear-gradient(160deg,#172a3d,#111e2d)}
+.allocation-guide{margin:8px 0 12px;line-height:1.6}
+.allocation-row{grid-template-columns:minmax(0,1fr) auto;gap:16px;padding:13px 0;border-bottom:1px solid #314357}
+.allocation-info{display:grid;gap:5px;min-width:0}
+.allocation-info>b{font-size:14px;color:#f1f5f9;letter-spacing:-.02em}
+.allocation-info>small{font-size:10px;line-height:1.55;color:#9fb1c3;max-width:270px}
+.allocation-stepper{display:flex;align-items:center;gap:7px}
+.allocation-current{width:39px;display:grid;justify-items:center;gap:1px}
+.allocation-current small{font-size:9px;color:#91a5b9}
+.allocation-current b{font-size:17px;color:#f1f5f9;font-variant-numeric:tabular-nums}
+.step-button{width:29px;height:31px;border:1px solid #40566d;border-radius:7px;background:#22364a;color:#eaf1f8;font-size:18px;line-height:1}
+.step-button:disabled{opacity:.3;cursor:not-allowed}
+.step-button.step-plus{background:#b78b45;border-color:#d4ad6a;color:#101923}
+.allocation-added{width:31px;text-align:center;font-size:12px;color:#e4bd72;font-variant-numeric:tabular-nums}
+.allocation-summary{display:flex;justify-content:space-between;align-items:center;margin-top:13px;padding:11px 12px;background:#0d1926;border:1px solid #304459;border-radius:9px;font-size:11px;color:#a9b9c8}
+.allocation-summary b{font-size:14px;color:#f0c778}
+@media(max-width:560px){.allocation-row{gap:7px}.allocation-info>small{max-width:190px;font-size:9px}.allocation-stepper{gap:4px}.allocation-current{width:31px}.step-button{width:27px;height:29px}.allocation-added{width:24px}}
