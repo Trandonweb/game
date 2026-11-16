@@ -77,8 +77,8 @@ const PITCHES={
   fastball:{label:"직구",speed:40,breakX:0,breakY:0,stamina:1.0},
   slider:{label:"슬라이더",speed:34,breakX:2.2,breakY:-.25,stamina:1.1},
   curve:{label:"커브",speed:29,breakX:-.8,breakY:-2.5,stamina:1.15},
-  changeup:{label:"체인지업",speed:30,breakX:-.5,breakY:-.8,stamina:.9},
-  sinker:{label:"싱커",speed:36,breakX:1.1,breakY:-1.6,stamina:1.05}
+  sinker:{label:"싱커",speed:36,breakX:1.1,breakY:-1.6,stamina:1.05},
+  changeup:{label:"체인지업",speed:30,breakX:-.5,breakY:-.8,stamina:.9}
 };
 const BASE_POSITIONS={first:new THREE.Vector3(10,.5,11),second:new THREE.Vector3(0,.5,0),third:new THREE.Vector3(-10,.5,11),home:new THREE.Vector3(0,.5,22)};
 function getFenceStatus(position,fence={}){
@@ -185,7 +185,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
       hint.textContent="공이 타격 구간에 들어올 때 스윙하세요. 타이밍과 공의 위치가 타구에 영향을 줍니다.";
       controls.innerHTML='<div class="diamond-batter-controls"><div class="diamond-guess"><small>공을 확인하세요</small><span>투구 궤적을 읽고 타이밍을 맞추세요.</span></div><div class="diamond-swing-area"><button class="diamond-swing" data-control="swing">SWING</button><button class="diamond-secondary" data-control="bunt">번트</button></div><div class="diamond-runner-controls"><small>주루 작전</small><button data-steal="1">1루 도루</button><button data-steal="2">2루 도루</button><button data-steal="3">3루 도루</button></div></div>';
     }else if(phase==="ready"&&activeControl==="pitch"){
-      hint.textContent="SPACE 투구 · W/E/A/Z/X 구종 · 방향키/스트라이크 존 코스 · S 포수 리드 · B 고의사구 · 1/2/3 견제";
+      hint.textContent="SPACE 투구 · E/W/A/Z/X 구종 · 방향키/스트라이크 존 코스 · S 포수 리드 · B 고의사구 · 1/2/3 견제";
       controls.innerHTML='<div class="diamond-pitch-controls"><div class="diamond-pitch-select"><small>구종 선택</small>'+Object.entries(PITCHES).map(([key,p])=>'<button data-pitch="'+key+'" class="'+(selectedPitch===key?"selected":"")+'">'+p.label+'</button>').join("")+'</div><div class="diamond-pitch-zone-wrap"><small>투구 위치 지정 · 드래그</small><div class="diamond-pitch-zone" id="diamond-aim-zone"><div class="diamond-zone-target" id="diamond-zone-target"></div></div><span id="diamond-aim-label">가운데</span></div><div class="diamond-pitch-actions"><button class="diamond-primary" data-control="pitch">투구</button><button class="diamond-secondary" data-control="lead">포수 리드: '+({center:"중앙",inside:"몸쪽",outside:"바깥쪽"}[catcherLead])+'</button><button class="diamond-secondary" data-control="intentional">고의사구</button><div class="diamond-pickoff"><button data-pickoff="first">1루 견제</button><button data-pickoff="second">2루 견제</button><button data-pickoff="third">3루 견제</button></div></div></div>';
       positionAimMarker();
     }else if(phase==="fielding"&&!manualFielding){
