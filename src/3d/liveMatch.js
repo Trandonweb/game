@@ -449,8 +449,19 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     if(phase==="ready"&&activeControl==="bat"&&pitchClock>1.8)throwCpuPitch();
     if(phase==="pitch-flight"){
       if(ball){ball.position.addScaledVector(ballVelocity,dt);ballVelocity.y-=9.81*dt;ballVelocity.x+=Math.sin(pitchClock*ballSpin)*.04;pitchClock+=dt;
-        if(activeControl==="bat"&&ball.position.z>19.8){if(swingPressed||swingAttempted){strikes++;atBatResult="헛스윙";setResult("헛스윙! 스트라이크 "+strikes+"개.")}else{const inZone=ball.position.x>-.95&&ball.position.x<.95&&ball.position.y>1.2&&ball.position.y<3.7;if(inZone){strikes++;setResult("스트라이크! 타자가 공을 지켜봤습니다.")}else{balls++;setResult("볼! 공을 골랐습니다.")}}if(strikes>=3){strikeouts++;atBatResult="루킹 삼진";resetCount();finishAtBat(true)}else if(balls>=4){addBatterToBase();atBatResult="볼넷";resetCount();finishAtBat(false)}else nextPitch()}
-        else if(activeControl==="pitch"&&ball.position.z>19.8){pitchResultForAi()}
+        if(swingPressed&&activeControl==="bat"){
+          swingClock+=dt;const t=clamp(swingClock/.28,0,1),arc=Math.sin(t*Math.PI),pivot=battingPlayer.userData.batPivot;
+          pivot.rotation.x=lerp(-.25,pendingBunt?-.78:-1.25,arc);pivot.rotation.z=lerp(-.15,pendingBunt?-.42:-.95,arc);
+          battingPlayer.userData.arms[0].shoulder.rotation.x=-.75*arc;battingPlayer.userData.arms[1].shoulder.rotation.x=-.55*arc;
+          battingPlayer.updateMatrixWorld(true);const sweetSpot=pivot.localToWorld(new THREE.Vector3(0,1.12,0)),separation=sweetSpot.distanceTo(ball.position);
+          if(ball.position.z>17&&ball.position.z<21.5&&separation<2.2){
+            const base=contactQuality(),collision=clamp(1-separation/2.6,.15,1),quality=clamp(base.quality*(.58+.42*collision),.05,.98);
+            swingPressed=false;swingAttempted=false;swingClock=0;pivot.rotation.x=-1.25;pivot.rotation.z=-.95;
+            atBatResult=(pendingBunt?"번트":base.grade)+" 타구";startHitBall(pendingBunt?Math.min(.58,quality):quality);
+          }else if(swingClock>.28){swingPressed=false;swingAttempted=true;swingClock=0;pivot.rotation.x=-.25;pivot.rotation.z=-.15;}
+        }
+        if(phase==="pitch-flight"&&activeControl==="bat"&&ball.position.z>19.8){if(swingPressed||swingAttempted){strikes++;atBatResult="헛스윙";setResult("헛스윙! 스트라이크 "+strikes+"개.")}else{const inZone=ball.position.x>-.95&&ball.position.x<.95&&ball.position.y>1.2&&ball.position.y<3.7;if(inZone){strikes++;setResult("스트라이크! 타자가 공을 지켜봤습니다.")}else{balls++;setResult("볼! 공을 골랐습니다.")}}if(strikes>=3){strikeouts++;atBatResult="루킹 삼진";resetCount();finishAtBat(true)}else if(balls>=4){addBatterToBase();atBatResult="볼넷";resetCount();finishAtBat(false)}else nextPitch()}
+        else if(phase==="pitch-flight"&&activeControl==="pitch"&&ball.position.z>19.8){pitchResultForAi()}
         if(ball&&ball.position.y<.12&&ball.position.z>17){ball.position.y=.12;ballVelocity.set(0,0,0)}
       }
     }
@@ -472,14 +483,6 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
       }
     }
     if(phase==="fielding"&&activeFielder){const d=activeFielder.position.distanceTo(ball.position);if(d<3.8&&ball.position.y<5)hint.textContent="포구할 수 있습니다 · 스페이스 또는 포구 버튼";else hint.textContent="수비수를 공 쪽으로 이동하세요 · WASD"}
-    if(swingPressed&&phase==="pitch-flight"&&ball){
-      swingClock+=dt;const t=clamp(swingClock/.28,0,1),arc=Math.sin(t*Math.PI);const pivot=battingPlayer.userData.batPivot;
-      pivot.rotation.x=lerp(-.25,pendingBunt?-.78:-1.25,arc);pivot.rotation.z=lerp(-.15,pendingBunt?-.42:-.95,arc);
-      battingPlayer.userData.arms[0].shoulder.rotation.x=-.75*arc;battingPlayer.userData.arms[1].shoulder.rotation.x=-.55*arc;
-      battingPlayer.updateMatrixWorld(true);const sweetSpot=pivot.localToWorld(new THREE.Vector3(0,1.12,0));const separation=sweetSpot.distanceTo(ball.position);
-      if(ball.position.z>17&&ball.position.z<21.5&&separation<2.2){const base=contactQuality();const collision=clamp(1-separation/2.6,.15,1);const quality=clamp(base.quality*(.58+.42*collision),.05,.98);swingPressed=false;swingAttempted=false;atBatResult=(pendingBunt?"번트":base.grade)+" 타구";startHitBall(pendingBunt?Math.min(.58,quality):quality)}
-      else if(swingClock>.28){swingPressed=false;swingAttempted=true;swingClock=0;pivot.rotation.x=-.25;pivot.rotation.z=-.15;}
-    }
     players.forEach(p=>{if(p!==activeFielder)animatePlayer(p,dt,now)});
     if(phase==="result"&&outs>=3){finishHalf()}
     renderer.render(scene,camera);
