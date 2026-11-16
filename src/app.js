@@ -1,4 +1,5 @@
-import { TEAMS } from "./data/teams.js";
+import { TEAMS, getTeam } from "./data/teams.js";
+import { mountLiveMatch } from "./3d/liveMatch.js";
 import { createPlayerProfile, applyDevelopment, gainExperience, switchPosition, canBeTwp } from "./engine/player.js";
 import { runDraft } from "./engine/draft.js";
 import { createCard, trainCard } from "./engine/cards.js";
@@ -15,11 +16,14 @@ try{
   if(raw){savedSession=JSON.parse(raw);if(savedSession&&typeof savedSession==="object") {state.screen="resume";state.resumeSnapshot=savedSession;}}
 }catch(error){console.warn("세션 저장 데이터를 읽지 못했습니다.",error);}
 let stadiumCleanup=null;
+let liveMatchCleanup=null;
 function toast(message){const region=document.querySelector("#toast-region"),item=document.createElement("div");item.className="toast";item.textContent=message;region.append(item);setTimeout(()=>item.remove(),2600)}
 function disposeStadium(){if(stadiumCleanup){stadiumCleanup();stadiumCleanup=null}}
+function disposeLiveMatch(){if(liveMatchCleanup){liveMatchCleanup();liveMatchCleanup=null}}
 function saveSession(){try{if(state.screen==="resume"||state.screen==="home")return;const snapshot={screen:state.screen,mode:state.mode,player:state.player,choices:state.choices,draft:state.draft,career:state.career,careerScreen:state.careerScreen,seasonResult:state.seasonResult,favoriteTeamId:state.favoriteTeamId,liveMatch:state.liveMatch};sessionStorage.setItem(SESSION_KEY,JSON.stringify(snapshot));}catch(error){console.warn("커리어 임시 저장에 실패했습니다.",error);toast("브라우저 저장 공간을 사용할 수 없습니다.");}}
 function render(){
   disposeStadium();
+  disposeLiveMatch();
   switch(state.screen){
     case"resume":root.innerHTML=renderResume(state.resumeSnapshot);break;
     case"live-match":root.innerHTML=renderLiveMatch(state.liveMatch,state.career.player);break;
@@ -49,6 +53,14 @@ function render(){
           console.warn("3D stadium unavailable",error);
         }
       });
+  }
+  if(state.screen==="live-match"){
+    const host=document.querySelector("#live-game-host");
+    if(host){
+      mountLiveMatch(host,getTeam(state.career.teamId),state.career.player,state.liveMatch,updated=>{state.liveMatch=updated;saveSession()},updated=>{state.liveMatch=updated;finishLiveMatch()})
+        .then(cleanup=>{if(state.screen==="live-match")liveMatchCleanup=cleanup;else cleanup()})
+        .catch(error=>{host.innerHTML='<div class="stadium-fallback"><b>3D 경기장을 불러오지 못했습니다.</b><span>WebGL 지원과 네트워크 연결을 확인해 주세요.</span></div>';console.error("3D live match failed",error)});
+    }
   }
   if(state.screen==="create")syncTwpOption();
   saveSession();
