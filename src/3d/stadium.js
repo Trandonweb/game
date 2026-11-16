@@ -150,8 +150,7 @@ function addField(scene,team){
   const homeDirt=add(scene,new THREE.CircleGeometry(8.2,48),dirt,[0,.045,23],[-Math.PI/2,0,0]);homeDirt.scale.set(1.35,.9,1);
   const batterBoxMat=chalk;
   for(const side of [-1,1]){
-    const boxMark=add(scene,new THREE.PlaneGeometry(2.1,4.2),batterBoxMat,[side*2.05,.065,22.3],[-Math.PI/2,0,0]);
-    boxMark.material=mat("#f0ead8",.9,{transparent:true,opacity:.5});
+    const boxMark=add(scene,new THREE.PlaneGeometry(2.1,4.2),new THREE.MeshBasicMaterial({color:"#f0ead8",transparent:true,opacity:.48,side:THREE.DoubleSide}),[side*2.05,.065,22.3],[-Math.PI/2,0,0]);
     const coach=add(scene,new THREE.PlaneGeometry(3.5,1.8),dirt,[side*15,.04,8],[-Math.PI/2,0,0]);
   }
   // Pitcher's mound and rubber.
