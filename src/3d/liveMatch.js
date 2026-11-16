@@ -107,7 +107,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const batterStats=player.isTwp?(player.role==="pitcher"?player.secondaryAttributes:player.attributes):(player.role==="pitcher"?null:player.attributes);
   const pitcherStats=player.isTwp?(player.role==="pitcher"?player.attributes:player.pitcherAttributes):(player.role==="pitcher"?player.attributes:null);
   const isTeamControl=match.controlMode==="team";
-  const getUserHalfMode=()=>half==="bottom"?(playerRole==="batter"||playerRole==="two-way"||isTeamControl?"bat":"auto"):(playerRole==="pitcher"||playerRole==="two-way"||isTeamControl?"pitch":"auto");
+  const getUserHalfMode=()=>isTeamControl?(half==="bottom"?"bat":"pitch"):(half==="bottom"?"bat":"field");
   const currentTeamScore=()=>scoreRuns;
   const setResult=t=>{resultText.textContent=t;caption.textContent=t;match.lastResult=t};
   const syncRunners=()=>{
@@ -149,7 +149,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     activeControl=getUserHalfMode();
     if(phase==="intro"||phase==="fielding"||phase==="hit-flight"||phase==="pitch-flight")return;
     if(activeControl==="auto"){runAutoHalf();return}
-    if(activeControl==="bat")startBattingTurn();else if(activeControl==="pitch")startPitchingTurn();
+    if(activeControl==="bat")startBattingTurn();else if(activeControl==="pitch")startPitchingTurn();else if(activeControl==="field")startCpuFieldAtBat();
   };
   const makeBall=pos=>{
     if(ball){scene.remove(ball);ball.geometry.dispose()}
@@ -230,6 +230,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
       phase="ready";pitchClock=0;makeBall(new THREE.Vector3(0,2.3,-1));setResult("다음 공을 기다리세요.");renderControls();
       autoTimer=window.setTimeout(()=>{if(!disposed&&phase==="ready"&&activeControl==="bat")throwCpuPitch()},700);
     }else if(activeControl==="pitch"){phase="ready";setResult("다음 투구를 준비하세요.");renderControls()}
+    else if(activeControl==="field"){phase="ready";pitchClock=0;setResult("다음 타자를 상대합니다.");renderControls();autoTimer=window.setTimeout(()=>{if(!disposed&&phase==="ready"&&activeControl==="field")throwPitch(true)},700)}
     updateMatch();
   };
   const classifyPitch=(target)=>{
@@ -285,7 +286,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     battingPlayer.userData.batPivot.rotation.z=-1.8;
     setCamera("field");
     activeFielder=fielders.reduce((best,f)=>!best||f.position.distanceTo(ball.position)<best.position.distanceTo(ball.position)?f:best,null);
-    activeFielderIndex=fielders.indexOf(activeFielder);manualFielding=half==="top"&&(isTeamControl||playerRole==="pitcher"||playerRole==="two-way");
+    activeFielderIndex=fielders.indexOf(activeFielder);manualFielding=half==="top"&&(isTeamControl||match.controlMode==="player");
     renderControls();updateMatch();
   };
   const swing=(bunt=false)=>{
@@ -418,6 +419,12 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const startPitchingTurn=()=>{
     activeControl="pitch";battingPlayer.visible=true;battingPlayer.position.set(-1.2,0,21.6);battingPlayer.userData.running=false;battingPlayer.userData.targetPosition.set(0,0,22);setCamera("pitcher");phase="ready";pitchClock=0;makeBall(new THREE.Vector3(0,2.3,-1));phaseLabel.textContent="ON THE MOUND";setResult("투수 시점입니다. 구종과 코스를 정하세요.");renderControls();
   };
+  const startCpuFieldAtBat=()=>{
+    activeControl="field";swingPressed=false;swingAttempted=false;swingClock=0;
+    battingPlayer.visible=true;battingPlayer.position.set(-1.2,0,21.6);battingPlayer.userData.running=false;battingPlayer.userData.targetPosition.set(0,0,22);
+    setCamera("broadcast");phase="ready";pitchClock=0;makeBall(new THREE.Vector3(0,2.3,-1));phaseLabel.textContent="DEFENSE";setResult("상대 타자가 타석에 들어섰습니다. 타구가 나오면 직접 수비하세요.");renderControls();
+    autoTimer=window.setTimeout(()=>{if(!disposed&&phase==="ready"&&activeControl==="field")throwPitch(true)},850);
+  };
   const onKey=e=>{
     if(disposed||finished)return;
     const key=e.key.toLowerCase();
@@ -485,7 +492,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
       case"intentional":balls=4;addBatterToBase();resetCount();atBatResult="고의사구";finishAtBat(false);break;
       case"lead":cycleCatcherLead();renderControls();break;
       case"catch":catchBall();break;
-      case"next":if(outs>=3)finishHalf();else if(activeControl==="bat")startBattingTurn();else startPitchingTurn();break;
+      case"next":if(outs>=3)finishHalf();else if(activeControl==="bat")startBattingTurn();else if(activeControl==="field")startCpuFieldAtBat();else startPitchingTurn();break;
       case"finish":onFinish?.(match);break;
       case"resume":paused=false;setResult("경기를 재개합니다.");renderControls();updateMatch();break;
     }
