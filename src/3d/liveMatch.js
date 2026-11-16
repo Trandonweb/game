@@ -90,6 +90,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const canvas=host.querySelector("#diamond-canvas"),view=host.querySelector(".diamond-game-view"),controls=host.querySelector("#diamond-controls");
   const scoreboard=host.querySelector("#diamond-scoreboard"),caption=host.querySelector("#diamond-caption"),intro=host.querySelector("#diamond-intro"),resultText=host.querySelector("#diamond-result"),countText=host.querySelector("#diamond-count"),phaseLabel=host.querySelector("#diamond-phase-label"),hint=host.querySelector("#diamond-hint"),speedText=host.querySelector("#diamond-speed");
   let renderer,scene,camera,resizeObserver,raf=0,disposed=false,last=performance.now(),clock=0,introClock=0,phase="intro",viewMode="broadcast",activeControl="auto",pitchKind="fastball",aim={x:0,y:0},pitchClock=0,swingClock=0,swingPressed=false,swingAttempted=false,pendingBunt=false,ball=null,ballVelocity=new THREE.Vector3(),ballSpin=0,battingPlayer=null,pitchingPlayer=null,catcher=null,umpire=null,activeFielder=null,activeFielderIndex=0,fielders=[],benchView=false,ballInPlay=false,playResolved=false,selectedSteal=0,scoreRuns=match.userRuns||0,opponentRuns=match.opponentRuns||0,outs=match.outs||0,balls=match.balls||0,strikes=match.strikes||0,hits=match.hits||0,homeRuns=match.homeRuns||0,strikeouts=match.strikeouts||0,pitches=match.pitches||0,inning=match.inning||1,half=match.half||"top",bases=Array.isArray(match.bases)?match.bases.slice(0,3):[false,false,false],userAtBatDone=false,finished=false,autoTimer=0,throwTarget=null,throwClock=0,fieldingResult=null,atBatResult="",runLog=[],introPlayers=[],pitchTarget={x:0,y:2.45},selectedPitch="fastball",isTouchingZone=false,zonePointer=null,manualFielding=false;
+  let nextRunnerId=1,runnerTokens=bases.map(occupied=>occupied?"runner-"+nextRunnerId++:null);
   const players=[],fieldObjects=[],fieldMaterial=material("#3e7b42"),ballMaterial=material("#f8f7ef",.32),whiteMaterial=material("#f4f1e9");
   const baseColors=["#f1eee4","#f1eee4","#f1eee4"];
   const playerRole=match.playerRole||(player.role==="pitcher"?"pitcher":"batter");
@@ -101,12 +102,14 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const setResult=t=>{resultText.textContent=t;caption.textContent=t;match.lastResult=t};
   const syncRunners=()=>{
     const home=scene?.userData?.homeRunners||[],away=scene?.userData?.awayRunners||[];
-    const active=half==="bottom"?home:away,inactive=half==="bottom"?away:home;
-    active.forEach((runner,index)=>{
-      if(!runner)return;
-      if(bases[index]){if(!runner.visible)runner.position.set(0,0,22);runner.visible=true;runner.userData.targetPosition=BASE_POSITIONS[["first","second","third"][index]].clone();runner.userData.targetPosition.y=0;}
-      else runner.visible=false;
-    });
+    const active=half==="bottom"?home:away,inactive=half==="bottom"?away:home,used=new Set();
+    for(let index=0;index<3;index++){
+      const token=runnerTokens[index];if(!token)continue;
+      let runner=active.find(item=>item?.userData?.runnerToken===token);
+      if(!runner){runner=active.find(item=>item&&!used.has(item)&&!item.visible)||active.find(item=>item&&!used.has(item));if(!runner)continue;runner.userData.runnerToken=token;runner.position.set(0,0,22)}
+      runner.visible=true;runner.userData.targetPosition=BASE_POSITIONS[["first","second","third"][index]].clone();runner.userData.targetPosition.y=0;used.add(runner);
+    }
+    active.forEach(runner=>{if(runner&&!used.has(runner))runner.visible=false});
     inactive.forEach(runner=>{if(runner)runner.visible=false});
   };
   const updateMatch=()=>{
@@ -196,14 +199,11 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     if(model===pitchingPlayer&&phase==="pitch-flight"){u.arms[1].shoulder.rotation.x=Math.sin(pitchClock*11)*.75;u.torso.rotation.z=Math.sin(pitchClock*8)*.06}
     if(model===battingPlayer&&swingClock>0){const t=clamp(swingClock/.28,0,1),arc=Math.sin(t*Math.PI);u.batPivot.rotation.x=lerp(-.25,pendingBunt?-.78:-1.25,arc);u.batPivot.rotation.z=lerp(-.15,pendingBunt?-.42:-.95,arc);u.arms[0].shoulder.rotation.x=-.75*arc;u.arms[1].shoulder.rotation.x=-.55*arc}
   };
-  const addBaseRunners=steps=>{
-    const next=[false,false,false];let scored=0;
-    bases.forEach((occupied,index)=>{if(!occupied)return;const dest=index+steps;if(dest>=3)scored++;else next[dest]=true});
-    if(steps<=3)next[steps-1]=true;bases=next;scoreRuns+=scored;return scored;
-  };
   const advanceBatter=steps=>{
-    if(steps>=4){scoreRuns+=bases.filter(Boolean).length+1;bases=[false,false,false];homeRuns++;hits++;return}
-    const scored=addBaseRunners(steps);scoreRuns+=scored;hits++;
+    if(steps>=4){scoreRuns+=runnerTokens.filter(Boolean).length+1;runnerTokens=[null,null,null];bases=[false,false,false];homeRuns++;hits++;return}
+    const next=[null,null,null];
+    runnerTokens.forEach((token,index)=>{if(!token)return;const destination=index+steps;if(destination>=3)scoreRuns++;else next[destination]=token});
+    next[steps-1]="runner-"+nextRunnerId++;runnerTokens=next;bases=next.map(Boolean);hits++;
   };
   const resetCount=()=>{balls=0;strikes=0;updateCount()};
   const nextPitch=()=>{
@@ -291,9 +291,9 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     else{strikes++;setResult("타자가 헛스윙했습니다.");if(strikes>=3){strikeouts++;atBatResult="삼진";resetCount();finishAtBat(true)}else nextPitch()}
   };
   const addBatterToBase=()=>{
-    const next=[false,false,false];let scored=0;
-    bases.forEach((v,i)=>{if(!v)return;if(i===2)scored++;else next[i+1]=true});
-    next[0]=true;bases=next;scoreRuns+=scored;
+    const next=[null,null,null];
+    runnerTokens.forEach((token,index)=>{if(!token)return;if(index===2)scoreRuns++;else next[index+1]=token});
+    next[0]="runner-"+nextRunnerId++;runnerTokens=next;bases=next.map(Boolean);
   };
   const finishAtBat=(isOut)=>{
     if(isOut&&outs<3)outs++;
@@ -324,7 +324,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     },1250);
   };
   const finishHalf=()=>{
-    phase="result";clearBall();outs=0;balls=0;strikes=0;bases=[false,false,false];userAtBatDone=false;
+    phase="result";clearBall();outs=0;balls=0;strikes=0;bases=[false,false,false];runnerTokens=[null,null,null];userAtBatDone=false;
     if(half==="top"){half="bottom";setResult("공수 교대! "+inning+"회 말 공격입니다.");}
     else if(inning>=(match.inningsLimit||9)){
       finished=true;phase="finished";phaseLabel.textContent="FINAL";
@@ -402,17 +402,17 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   }
   function steal(base){
     if(!bases[base-1]||phase!=="ready")return setResult("해당 베이스에 주자가 없습니다.");
-    selectedSteal=base;setResult(base+"루 주자가 도루를 시도합니다.");const chance=.55+(batterStats?.speed??60)*.003-(pitcherStats?.control??60)*.001;
-    if(Math.random()<chance){bases[base-1]=false;if(base===1)bases[1]=true;else if(base===2)bases[2]=true;else scoreRuns++;setResult("도루 성공! 주자가 진루했습니다.");}
-    else{outs++;bases[base-1]=false;setResult("도루 실패! 주자가 태그 아웃되었습니다.");if(outs>=3)finishHalf()}
+    selectedSteal=base;setResult(base+"루 주자가 도루를 시도합니다.");const chance=.55+(batterStats?.speed??60)*.003-(pitcherStats?.control??60)*.001,index=base-1,destination=index+1;
+    if(Math.random()<chance&&(destination>=3||!runnerTokens[destination])){const token=runnerTokens[index];runnerTokens[index]=null;if(destination>=3)scoreRuns++;else runnerTokens[destination]=token;bases=runnerTokens.map(Boolean);setResult("도루 성공! 주자가 진루했습니다.");}
+    else{outs++;runnerTokens[index]=null;bases=runnerTokens.map(Boolean);setResult("도루 실패! 주자가 태그 아웃되었습니다.");if(outs>=3)finishHalf()}
     updateMatch();
   }
   function pickoff(base){
     if(phase!=="ready"||activeControl!=="pitch")return;
     const index=base==="first"?0:base==="second"?1:2;
     if(!bases[index])return setResult("견제할 주자가 없습니다.");
-    const chance=.12+(player.pitcherAttributes?.control??60)*.002;
-    if(Math.random()<chance){bases[index]=false;outs++;setResult("견제 성공! 주자를 잡았습니다.");if(outs>=3)finishHalf()}
+    const chance=.12+(pitcherStats?.control??60)*.002;
+    if(Math.random()<chance){runnerTokens[index]=null;bases=runnerTokens.map(Boolean);outs++;setResult("견제 성공! 주자를 잡았습니다.");if(outs>=3)finishHalf()}
     else setResult("견제구! 주자가 귀루했습니다.");
     updateMatch();
   }
