@@ -151,13 +151,24 @@ function addField(scene,team){
   const trackPoints=[];
   for(let i=0;i<=96;i++){const a=Math.PI+Math.PI*i/96,r=interpolateFence(a,team.fence||{left:78,center:92,right:78})-4;trackPoints.push([Math.cos(a)*r,.03,Math.sin(a)*r])}
   addLine(scene,trackPoints,dirt,2.1);
-  // Dugouts and backstop.
-  const dugoutMat=mat("#52616a",.76),roofMat=mat(team.primary,.48,.18);
+  // Open-front dugouts: back/side walls, roof, railings and a visible team bench.
+  const dugoutMat=mat("#52616a",.76),roofMat=mat(team.primary,.48,.18),benchWood=mat("#9b7652"),benchMetal=mat("#344653"),uniform=mat(team.primary),skin=mat("#bd8d6a"),cap=mat("#172a3c");
   for(const side of [-1,1]){
     const x=side*24,z=17;
-    box(scene,dugoutMat,x,1.5,z,17,3,8);
-    box(scene,roofMat,x,3.3,z,18,.55,9);
-    for(let j=-2;j<=2;j++)box(scene,mat("#263744"),x+j*2.6,1.45,z-4.1,.25,2.6,.25);
+    box(scene,dugoutMat,x,1.55,z+4,17,3.1,.65);
+    box(scene,dugoutMat,x-side*8.15,1.55,z, .65,3.1,8);
+    box(scene,dugoutMat,x+side*8.15,1.55,z,.65,3.1,8);
+    box(scene,roofMat,x,3.35,z,18,.55,9);
+    box(scene,benchMetal,x,1.12,z+1.25,13,.18,.55);
+    for(let j=-2;j<=2;j++){
+      box(scene,benchMetal,x+j*2.5,.62,z+1.25,.16,.95,.16);
+      const torso=add(scene,new THREE.CapsuleGeometry(.34,.55,4,8),uniform,[x+j*2.15,.95,z+.95]);
+      torso.rotation.x=-.18;
+      add(scene,new THREE.SphereGeometry(.23,10,8),skin,[x+j*2.15,1.72,z+.72]);
+      add(scene,new THREE.SphereGeometry(.245,10,8,0,Math.PI*2,0,Math.PI/2),cap,[x+j*2.15,1.84,z+.72]);
+      box(scene,uniform,x+j*2.15,.62,z+1.55,.72,.65,.72);
+    }
+    for(let j=-3;j<=3;j++)box(scene,benchMetal,x+j*2.1,.82,z-3.55,.13,1.55,.13);
   }
   const backstop=add(scene,new THREE.TorusGeometry(16,.24,8,64,Math.PI),capMaterial(team),[0,5,29],[Math.PI/2,0,Math.PI]);
   // Bullpens: two separate warm-up areas beyond the foul territory.
@@ -209,16 +220,24 @@ function addStadiumDetails(scene,team){
   }
 }
 function addCrowd(scene,team){
-  const count=2400,geometry=new THREE.SphereGeometry(.22,5,4);
-  const crowd=new THREE.InstancedMesh(geometry,mat("#ffffff",.95),count);
-  const dummy=new THREE.Object3D(),colors=[team.primary,team.secondary,"#d9dce0","#b4a38a","#34485c"];
-  for(let i=0;i<count;i++){
-    const angle=Math.random()*Math.PI*2,rad=108+Math.random()*32,y=14+Math.random()*22;
-    dummy.position.set(Math.cos(angle)*rad,y,Math.sin(angle)*rad);
-    dummy.scale.set(.8,1.4,.8);dummy.updateMatrix();crowd.setMatrixAt(i,dummy.matrix);
-    crowd.setColorAt(i,new THREE.Color(colors[Math.floor(Math.random()*colors.length)]));
+  // Separate torso and head instances create readable seated spectators instead of a ring of dots.
+  const rows=15,sections=96,count=rows*sections;
+  const bodyGeometry=new THREE.CapsuleGeometry(.19,.42,3,6),headGeometry=new THREE.SphereGeometry(.145,7,6);
+  const body=new THREE.InstancedMesh(bodyGeometry,mat("#ffffff",.94),count);
+  const heads=new THREE.InstancedMesh(headGeometry,mat("#bd8d6a",.9),count);
+  const dummy=new THREE.Object3D(),skinColors=["#bd8d6a","#d4a47d","#8b604b","#e0b99a"];
+  const colors=[team.primary,team.secondary,"#d9dce0","#b4a38a","#34485c","#8b9ba6"];
+  let index=0;
+  for(let row=0;row<rows;row++)for(let section=0;section<sections;section++){
+    const angle=section/sections*Math.PI*2,rad=106+row*2.45,y=14+row*.9;
+    const x=Math.cos(angle)*rad,z=Math.sin(angle)*rad;
+    dummy.position.set(x,y,z);dummy.rotation.set(0,-angle+Math.PI/2,0);dummy.scale.set(1,1,1);dummy.updateMatrix();body.setMatrixAt(index,dummy.matrix);
+    body.setColorAt(index,new THREE.Color(colors[(section*7+row*3)%colors.length]));
+    dummy.position.set(x,y+.42,z);dummy.scale.set(.9,.9,.9);dummy.updateMatrix();heads.setMatrixAt(index,dummy.matrix);
+    heads.setColorAt(index,new THREE.Color(skinColors[(section+row*2)%skinColors.length]));
+    index++;
   }
-  crowd.instanceMatrix.needsUpdate=true;scene.add(crowd);
+  body.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;scene.add(body,heads);
 }
 function createPark(team){
   const scene=new THREE.Scene();scene.background=new THREE.Color("#9fb9c9");scene.fog=new THREE.Fog("#9fb9c9",260,560);
