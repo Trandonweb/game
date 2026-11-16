@@ -110,6 +110,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const isTeamControl=match.controlMode==="team";
   const getUserHalfMode=()=>isTeamControl?(half==="bottom"?"bat":"pitch"):(half==="bottom"?"bat":"field");
   const currentTeamScore=()=>scoreRuns;
+  const addRun=()=>{if(half==="bottom")scoreRuns++;else opponentRuns++};
   const setResult=t=>{resultText.textContent=t;caption.textContent=t;match.lastResult=t};
   const syncRunners=()=>{
     const home=scene?.userData?.homeRunners||[],away=scene?.userData?.awayRunners||[];
@@ -314,7 +315,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   };
   const addBatterToBase=()=>{
     const next=[null,null,null];
-    runnerTokens.forEach((token,index)=>{if(!token)return;if(index===2)scoreRuns++;else next[index+1]=token});
+    runnerTokens.forEach((token,index)=>{if(!token)return;if(index===2)addRun();else next[index+1]=token});
     next[0]="runner-"+nextRunnerId++;runnerTokens=next;bases=next.map(Boolean);
   };
   const finishAtBat=(isOut)=>{
@@ -464,7 +465,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   function steal(base){
     if(!bases[base-1]||phase!=="ready")return setResult("해당 베이스에 주자가 없습니다.");
     selectedSteal=base;setResult(base+"루 주자가 도루를 시도합니다.");const chance=.55+(batterStats?.speed??60)*.003-(pitcherStats?.control??60)*.001,index=base-1,destination=index+1;
-    if(Math.random()<chance&&(destination>=3||!runnerTokens[destination])){const token=runnerTokens[index];runnerTokens[index]=null;if(destination>=3)scoreRuns++;else runnerTokens[destination]=token;bases=runnerTokens.map(Boolean);setResult("도루 성공! 주자가 진루했습니다.");}
+    if(Math.random()<chance&&(destination>=3||!runnerTokens[destination])){const token=runnerTokens[index];runnerTokens[index]=null;if(destination>=3)addRun();else runnerTokens[destination]=token;bases=runnerTokens.map(Boolean);setResult("도루 성공! 주자가 진루했습니다.");}
     else{outs++;runnerTokens[index]=null;bases=runnerTokens.map(Boolean);setResult("도루 실패! 주자가 태그 아웃되었습니다.");if(outs>=3)finishHalf()}
     updateMatch();
   }
