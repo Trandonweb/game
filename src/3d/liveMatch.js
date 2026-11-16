@@ -160,6 +160,8 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     }else if(phase==="ready"&&activeControl==="pitch"){
       controls.innerHTML='<div class="diamond-pitch-controls"><div class="diamond-pitch-select"><small>구종 선택</small>'+Object.entries(PITCHES).map(([key,p])=>'<button data-pitch="'+key+'" class="'+(selectedPitch===key?"selected":"")+'">'+p.label+'</button>').join("")+'</div><div class="diamond-pitch-zone-wrap"><small>투구 위치 지정 · 드래그</small><div class="diamond-pitch-zone" id="diamond-aim-zone"><div class="diamond-zone-target" id="diamond-zone-target"></div></div><span id="diamond-aim-label">가운데</span></div><div class="diamond-pitch-actions"><button class="diamond-primary" data-control="pitch">투구</button><button class="diamond-secondary" data-control="intentional">고의사구</button><div class="diamond-pickoff"><button data-pickoff="first">1루 견제</button><button data-pickoff="second">2루 견제</button><button data-pickoff="third">3루 견제</button></div></div></div>';
       positionAimMarker();
+    }else if(phase==="fielding"&&!manualFielding){
+      controls.innerHTML='<div class="diamond-wait">수비수가 타구를 쫓고 있습니다. 타구 방향과 결과를 확인하세요.</div>';
     }else if(phase==="fielding"){
       controls.innerHTML='<div class="diamond-field-controls"><div class="diamond-move-pad"><button data-move="0,-1">↑</button><button data-move="-1,0">←</button><button data-move="1,0">→</button><button data-move="0,1">↓</button></div><div class="diamond-field-actions"><small>수비수 이동 · 공에 접근해 포구</small><button class="diamond-primary" data-control="catch">포구</button><div class="diamond-throw-grid"><button data-throw="first">1루 송구</button><button data-throw="second">2루 송구</button><button data-throw="third">3루 송구</button><button data-throw="home">홈 송구</button></div></div></div>';
     }else if(phase==="result"){
@@ -193,7 +195,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
   const resetCount=()=>{balls=0;strikes=0;updateCount()};
   const nextPitch=()=>{
     if(finished||phase==="fielding")return;
-    swingPressed=false;swingAttempted=false;swingClock=0;
+    swingPressed=false;swingAttempted=false;swingClock=0;if(battingPlayer){battingPlayer.userData.batPivot.rotation.x=-.25;battingPlayer.userData.batPivot.rotation.z=-.15}
     if(activeControl==="bat"){
       phase="ready";pitchClock=0;makeBall(new THREE.Vector3(0,2.3,-1));setResult("다음 공을 기다리세요.");renderControls();
       autoTimer=window.setTimeout(()=>{if(!disposed&&phase==="ready"&&activeControl==="bat")throwCpuPitch()},700);
@@ -250,7 +252,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     battingPlayer.userData.batPivot.rotation.z=-1.8;
     setCamera("field");
     activeFielder=fielders.reduce((best,f)=>!best||f.position.distanceTo(ball.position)<best.position.distanceTo(ball.position)?f:best,null);
-    activeFielderIndex=fielders.indexOf(activeFielder);manualFielding=isTeamControl||playerRole==="pitcher";
+    activeFielderIndex=fielders.indexOf(activeFielder);manualFielding=half==="top"&&(isTeamControl||playerRole==="pitcher");
     renderControls();updateMatch();
   };
   const swing=(bunt=false)=>{
@@ -348,11 +350,11 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     renderControls();
   };
   const toggleBench=()=>{
-    benchView=!benchView;setCamera(benchView?"bench":activeControl==="bat"?"batter":activeControl==="pitch"?"pitcher":"field");
+    benchView=!benchView;setCamera(benchView?"bench":phase==="fielding"?"field":activeControl==="bat"?"batter":activeControl==="pitch"?"pitcher":"broadcast");
     host.querySelector("#diamond-bench").textContent=benchView?"플레이 시점":"벤치 관전";
   };
   const startBattingTurn=()=>{
-    activeControl="bat";userAtBatDone=false;swingPressed=false;swingAttempted=false;swingClock=0;setCamera("batter");phase="ready";pitchClock=0;makeBall(new THREE.Vector3(0,2.3,-1));phaseLabel.textContent="AT BAT";setResult("타석에 들어섰습니다. 투구를 기다리세요.");renderControls();
+    activeControl="bat";userAtBatDone=false;swingPressed=false;swingAttempted=false;swingClock=0;battingPlayer.userData.batPivot.rotation.x=-.25;battingPlayer.userData.batPivot.rotation.z=-.15;setCamera("batter");phase="ready";pitchClock=0;makeBall(new THREE.Vector3(0,2.3,-1));phaseLabel.textContent="AT BAT";setResult("타석에 들어섰습니다. 투구를 기다리세요.");renderControls();
     autoTimer=window.setTimeout(()=>{if(!disposed&&phase==="ready")throwCpuPitch()},800);
   };
   const startPitchingTurn=()=>{
@@ -470,7 +472,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
   };
   const onSkip=()=>{introClock=8;beginLivePlay()};
   const onBench=()=>toggleBench();
-  const onCamera=()=>{benchView=false;const next=viewMode==="broadcast"?"batter":"broadcast";setCamera(next);host.querySelector("#diamond-camera").textContent=next==="broadcast"?"타석 시점":"중계 시점"};
+  const onCamera=()=>{benchView=false;const next=viewMode==="broadcast"?(phase==="fielding"?"field":activeControl==="pitch"?"pitcher":"batter"):"broadcast";setCamera(next);host.querySelector("#diamond-camera").textContent=next==="broadcast"?"타석 시점":"중계 시점"};
   const onExit=()=>{if(window.confirm("현재 경기를 종료하고 커리어 화면으로 돌아갈까요?"))onFinish?.(match)};
   host.addEventListener("click",onControl);host.querySelector("#diamond-skip-intro").addEventListener("click",onSkip);host.querySelector("#diamond-bench").addEventListener("click",onBench);host.querySelector("#diamond-camera").addEventListener("click",onCamera);host.querySelector("#diamond-exit").addEventListener("click",onExit);
   controls.addEventListener("pointerdown",onAimPointer);controls.addEventListener("pointermove",onAimMove);controls.addEventListener("pointerup",onAimUp);controls.addEventListener("pointercancel",onAimUp);canvas.addEventListener("pointerdown",onCanvasTap);window.addEventListener("keydown",onKey);
@@ -507,7 +509,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
         if(phase==="hit-flight"&&pitchClock>0.18){phase="fielding";phaseLabel.textContent="FIELDING";renderControls()}
         if(phase==="fielding"){
           pitchClock+=dt;
-          if(activeFielder&&!manualFielding){const target=ball.position.clone();target.y=0;const delta=target.sub(activeFielder.position);const distance=delta.length();if(distance>0.01)activeFielder.position.add(delta.normalize().multiplyScalar(Math.min(distance,dt*18)))}
+          if(activeFielder&&!manualFielding){const target=ball.position.clone();target.y=0;const delta=target.sub(activeFielder.position);const distance=delta.length();if(distance>0.01)activeFielder.position.add(delta.normalize().multiplyScalar(Math.min(distance,dt*18)));const horizontal=Math.hypot(activeFielder.position.x-ball.position.x,activeFielder.position.z-ball.position.z);if(horizontal<2.7&&ball.position.y<6&&ballVelocity.y<0){fieldingResult="caught";ball.position.copy(activeFielder.position).add(new THREE.Vector3(0,1,0));ballVelocity.set(0,0,0);resolveHitPlay()}}
           if(ball.position.y<=.22&&ballVelocity.y<0){ball.position.y=.22;ballVelocity.y=Math.abs(ballVelocity.y)*.27;ballVelocity.multiplyScalar(.78);if(ballVelocity.length()<2){fieldingResult="ground";resolveHitPlay()}}
           if(ball.position.z< -92||ball.position.x>105||ball.position.x< -105){if(ball.position.y>5){atBatResult="홈런";fieldingResult="ground"}else if(!fieldingResult)fieldingResult="ground";resolveHitPlay()}
           if(pitchClock>7&&!playResolved){fieldingResult="ground";resolveHitPlay()}
@@ -518,6 +520,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
         }
       }
     }
+    if(viewMode==="field"&&phase==="fielding"&&ball){const target=activeFielder?.position||ball.position;const desired=target.clone().add(new THREE.Vector3(24,15,20));camera.position.lerp(desired,Math.min(1,dt*1.8));camera.lookAt(ball.position)}
     if(phase==="fielding"&&activeFielder){const d=activeFielder.position.distanceTo(ball.position);if(d<3.8&&ball.position.y<5)hint.textContent="포구할 수 있습니다 · 스페이스 또는 포구 버튼";else hint.textContent="수비수를 공 쪽으로 이동하세요 · WASD"}
     players.forEach(p=>{if(p!==activeFielder)animatePlayer(p,dt,now)});
     if(phase==="result"&&outs>=3){finishHalf()}
