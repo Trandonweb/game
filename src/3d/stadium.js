@@ -238,6 +238,10 @@ function createPark(team){
   }
   return scene;
 }
+
+// 경기 장면에서도 동일한 오리지널 볼파크 지오메트리를 재사용합니다.
+export function createGamePark(team){return createPark(team)}
+
 export async function mountStadium(host,teams,selectedId,onSelect){
   if(!host)return()=>{};
   host.innerHTML='<section class="stadium-shell"><div class="stadium-head"><div><div class="eyebrow">BALLPARK COLLECTION · ARCHITECTURAL PREVIEW</div><h2>다이아몬드의 무대</h2></div><p>구장 구조·관중석·펜스·조명을 구단별로 설계한 3D 볼파크</p></div><div class="stadium-canvas-wrap"><div class="stadium-loading">3D 볼파크 렌더링 중…</div><div class="stadium-hint">드래그: 회전 · 스크롤: 확대/축소</div></div><div class="park-team-picker"></div></section>';
