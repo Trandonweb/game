@@ -37,7 +37,7 @@ function makePlayer(teamColor="#315c82",number="7",kind="fielder"){
   const batGrip=addMesh(batPivot,new THREE.CylinderGeometry(.035,.04,.42,10),material("#765033"),[0,.2,0]);
   const batBarrel=addMesh(batPivot,new THREE.CylinderGeometry(.065,.115,.88,12),material("#c89a5e"),[0,.82,0]);
   batBarrel.rotation.z=-.035;
-  root.userData={torso,head,arms,legs,batPivot,kind,walkPhase:Math.random()*6};
+  root.userData={torso,head,arms,legs,batPivot,kind,walkPhase:Math.random()*6,targetPosition:new THREE.Vector3(0,0,22)};
   return root;
 }
 
@@ -99,7 +99,18 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const getUserHalfMode=()=>half==="bottom"?(playerRole==="batter"||playerRole==="two-way"||isTeamControl?"bat":"auto"):(playerRole==="pitcher"||playerRole==="two-way"||isTeamControl?"pitch":"auto");
   const currentTeamScore=()=>scoreRuns;
   const setResult=t=>{resultText.textContent=t;caption.textContent=t;match.lastResult=t};
+  const syncRunners=()=>{
+    const home=scene?.userData?.homeRunners||[],away=scene?.userData?.awayRunners||[];
+    const active=half==="bottom"?home:away,inactive=half==="bottom"?away:home;
+    active.forEach((runner,index)=>{
+      if(!runner)return;
+      if(bases[index]){if(!runner.visible)runner.position.set(0,0,22);runner.visible=true;runner.userData.targetPosition=BASE_POSITIONS[["first","second","third"][index]].clone();runner.userData.targetPosition.y=0;}
+      else runner.visible=false;
+    });
+    inactive.forEach(runner=>{if(runner)runner.visible=false});
+  };
   const updateMatch=()=>{
+    syncRunners();
     match.inning=inning;match.half=half;match.outs=outs;match.balls=balls;match.strikes=strikes;match.userRuns=scoreRuns;match.opponentRuns=opponentRuns;match.bases=bases.slice();match.pitches=pitches;match.hits=hits;match.homeRuns=homeRuns;match.strikeouts=strikeouts;match.phase=phase;match.finished=finished;match.lastResult=resultText.textContent;
     scoreboard.innerHTML='<span class="diamond-inning">'+inning+'회 '+(half==="top"?"초":"말")+'</span><span class="diamond-team-score"><i class="away-dot"></i>'+opponentRuns+'</span><span class="diamond-team-score"><i class="home-dot"></i>'+scoreRuns+'</span><span class="diamond-bases"><i class="'+(bases[1]?"on":"")+'"></i><i class="'+(bases[2]?"on":"")+'"></i><i class="'+(bases[0]?"on":"")+'"></i></span><span class="diamond-out-count">'+outs+' OUT</span>';
     countText.textContent="B "+balls+"　S "+strikes+"　O "+outs;
@@ -119,6 +130,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     fielders=homeBatting?scene.userData.awayFielders:scene.userData.homeFielders;
     scene.userData.homeFielders.forEach(f=>f.visible=!homeBatting);
     scene.userData.awayFielders.forEach(f=>f.visible=homeBatting);
+    syncRunners();
   };
   const setPhaseMode=()=>{
     activeControl=getUserHalfMode();
@@ -178,6 +190,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   }
   const animatePlayer=(model,dt,now)=>{
     if(!model)return;const u=model.userData;u.walkPhase+=dt*3.5;
+    if(u.kind==="runner"&&model.visible&&u.targetPosition){const delta=u.targetPosition.clone().sub(model.position),distance=delta.length();if(distance>.18){const direction=delta.normalize();model.position.add(direction.multiplyScalar(Math.min(distance,dt*8.5)));model.rotation.y=Math.atan2(direction.x,-direction.z);u.legs[0].rotation.x=Math.sin(now*.014)*.48;u.legs[1].rotation.x=-Math.sin(now*.014)*.48;}else{u.legs[0].rotation.x=lerp(u.legs[0].rotation.x,0,dt*5);u.legs[1].rotation.x=lerp(u.legs[1].rotation.x,0,dt*5)}}
     if(phase==="intro"){u.legs[0].rotation.x=Math.sin(now*.004+u.walkPhase)*.22;u.legs[1].rotation.x=-Math.sin(now*.004+u.walkPhase)*.22;u.arms[0].shoulder.rotation.x=-u.legs[0].rotation.x*.6;u.arms[1].shoulder.rotation.x=-u.legs[1].rotation.x*.6}
     else{u.legs.forEach(l=>l.rotation.x=lerp(l.rotation.x,0,dt*6));u.arms.forEach(a=>{a.shoulder.rotation.x=lerp(a.shoulder.rotation.x,0,dt*5);a.elbow.rotation.x=lerp(a.elbow.rotation.x,0,dt*5)})}
     if(model===pitchingPlayer&&phase==="pitch-flight"){u.arms[1].shoulder.rotation.x=Math.sin(pitchClock*11)*.75;u.torso.rotation.z=Math.sin(pitchClock*8)*.06}
@@ -453,12 +466,16 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     const umpireModel=makePlayer("#242c34","0","umpire");umpireModel.scale.set(.88,.95,.88);umpireModel.position.set(0,0,27.4);scene.add(umpireModel);umpire=umpireModel;
     players.push(userBatter,awayBatter,userPitcher,awayPitcher,homeCatcher,awayCatcher,umpireModel);
     const positions=[[-10,0,11],[10,0,11],[-8,0,2],[8,0,2],[-34,0,-32],[0,0,-57],[34,0,-32],[0,0,-18]];
-    const homeFielders=[],awayFielders=[];
+    const homeFielders=[],awayFielders=[],homeRunners=[],awayRunners=[];
     positions.forEach((p,i)=>{
       const hf=makePlayer(home,String(i+3),"fielder");hf.position.set(p[0],0,p[2]);scene.add(hf);homeFielders.push(hf);players.push(hf);
       const af=makePlayer(opponent.primary,String(i+3),"fielder");af.position.set(p[0],0,p[2]);scene.add(af);awayFielders.push(af);players.push(af);
     });
-    scene.userData.userBatter=userBatter;scene.userData.awayBatter=awayBatter;scene.userData.userPitcher=userPitcher;scene.userData.awayPitcher=awayPitcher;scene.userData.homeCatcher=homeCatcher;scene.userData.awayCatcher=awayCatcher;scene.userData.homeFielders=homeFielders;scene.userData.awayFielders=awayFielders;
+    for(let i=0;i<3;i++){
+      const hr=makePlayer(home,"R"+(i+1),"runner");hr.visible=false;scene.add(hr);homeRunners.push(hr);players.push(hr);
+      const ar=makePlayer(opponent.primary,"R"+(i+1),"runner");ar.visible=false;scene.add(ar);awayRunners.push(ar);players.push(ar);
+    }
+    scene.userData.userBatter=userBatter;scene.userData.awayBatter=awayBatter;scene.userData.userPitcher=userPitcher;scene.userData.awayPitcher=awayPitcher;scene.userData.homeCatcher=homeCatcher;scene.userData.awayCatcher=awayCatcher;scene.userData.homeFielders=homeFielders;scene.userData.awayFielders=awayFielders;scene.userData.homeRunners=homeRunners;scene.userData.awayRunners=awayRunners;
     updateSides();
     addStrikeZone(scene);
     makeBall(new THREE.Vector3(0,2.3,-1));
