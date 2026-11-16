@@ -392,6 +392,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     }else if(activeControl==="pitch"){
       if(key===" "||key==="enter")throwPitch(false);
       if(key==="w")selectedPitch="curve";if(key==="e")selectedPitch="fastball";if(key==="a")selectedPitch="slider";if(key==="s")selectedPitch="changeup";if(key==="z")selectedPitch="sinker";
+      if(key==="b"){balls=4;addBatterToBase();resetCount();atBatResult="고의사구";finishAtBat(false)}
       if(["1","2","3"].includes(key))pickoff(["first","second","third"][Number(key)-1]);
       renderControls();
     }
