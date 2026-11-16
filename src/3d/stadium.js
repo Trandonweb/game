@@ -139,60 +139,65 @@ function addField(scene,team){
   const grass=mat("#ffffff",.96,0,{map:makeGrassTexture()});
   const dirt=mat("#b8875a",.96),chalk=mat("#f0ead8",.9),rubber=mat("#e4e0d4",.9);
   const field=add(scene,new THREE.PlaneGeometry(260,260),grass,[0,-.25,0],[-Math.PI/2,0,0]);field.receiveShadow=true;
-  const infield=add(scene,new THREE.CircleGeometry(21,64),dirt,[0,.025,10],[-Math.PI/2,0,0]);infield.scale.set(1,1.15,1);
+  // Infield dirt: a broad diamond apron plus individual dirt cutouts at every base.
+  const infield=add(scene,new THREE.CircleGeometry(21,64),dirt,[0,.018,10],[-Math.PI/2,0,0]);infield.scale.set(1,1.15,1);
+  const basePositions=[[0,.12,22],[-10,.12,11],[0,.12,0],[10,.12,11]];
+  for(const [x,,z] of basePositions){
+    const cutout=add(scene,new THREE.CircleGeometry(4.1,32),dirt,[x,.035,z],[-Math.PI/2,0,0]);
+    cutout.scale.set(1,1.08,1);
+  }
+  // Home-plate dirt circle and batter/coach boxes.
+  const homeDirt=add(scene,new THREE.CircleGeometry(8.2,48),dirt,[0,.045,23],[-Math.PI/2,0,0]);homeDirt.scale.set(1.35,.9,1);
+  const batterBoxMat=chalk;
+  for(const side of [-1,1]){
+    const boxMark=add(scene,new THREE.PlaneGeometry(2.1,4.2),batterBoxMat,[side*2.05,.065,22.3],[-Math.PI/2,0,0]);
+    boxMark.material=mat("#f0ead8",.9,{transparent:true,opacity:.5});
+    const coach=add(scene,new THREE.PlaneGeometry(3.5,1.8),dirt,[side*15,.04,8],[-Math.PI/2,0,0]);
+  }
+  // Pitcher's mound and rubber.
   const mound=add(scene,new THREE.CylinderGeometry(3.6,4.1,.7,32),dirt,[0,.35,-1]);
   add(scene,new THREE.BoxGeometry(1.8,.18,.5),rubber,[0,.73,-1]);
-  const basePositions=[[0,.12,22],[-10,.12,11],[0,.12,0],[10,.12,11]];
   const bases=basePositions.map(([x,y,z])=>add(scene,new THREE.BoxGeometry(2.1,.3,2.1),rubber,[x,y,z],[0,Math.PI/4,0]));
   addLine(scene,[[0,.08,22],[-10,.08,11],[0,.08,0],[10,.08,11],[0,.08,22]],chalk,.14);
   addLine(scene,[[0,.08,22],[-92,.08,-70]],chalk,.12);
   addLine(scene,[[0,.08,22],[92,.08,-70]],chalk,.12);
+  // Foul-territory dirt lanes near home and both dugouts, while the rest stays grass.
+  for(const side of [-1,1]){
+    const foulDirt=add(scene,new THREE.PlaneGeometry(13,35),dirt,[side*17,.012,16],[-Math.PI/2,0,side*.13]);
+    foulDirt.receiveShadow=true;
+  }
   // Warning track around the outfield.
   const trackPoints=[];
   for(let i=0;i<=96;i++){const a=Math.PI+Math.PI*i/96,r=interpolateFence(a,team.fence||{left:78,center:92,right:78})-4;trackPoints.push([Math.cos(a)*r,.03,Math.sin(a)*r])}
   addLine(scene,trackPoints,dirt,2.1);
-  // Open-front dugouts: back/side walls, roof, railings and a visible team bench.
-  const dugoutMat=mat("#52616a",.76),roofMat=mat(team.primary,.48,.18),benchWood=mat("#9b7652"),benchMetal=mat("#344653"),uniform=mat(team.primary),skin=mat("#bd8d6a"),cap=mat("#172a3c");
+  // Dugouts are lowered and placed completely outside the foul lines, beside the first/third-base lines.
+  const dugoutMat=mat("#52616a",.76),roofMat=mat(team.primary,.48,.18),benchMetal=mat("#344653"),uniform=mat(team.primary),skin=mat("#bd8d6a"),cap=mat("#172a3c");
   for(const side of [-1,1]){
-    const x=side*24,z=17;
-    box(scene,dugoutMat,x,1.55,z+4,17,3.1,.65);
-    box(scene,dugoutMat,x-side*8.15,1.55,z, .65,3.1,8);
-    box(scene,dugoutMat,x+side*8.15,1.55,z,.65,3.1,8);
-    box(scene,roofMat,x,3.35,z,18,.55,9);
-    box(scene,benchMetal,x,1.12,z+1.25,13,.18,.55);
+    const x=side*27,z=17;
+    box(scene,dugoutMat,x,.65,z+3.5,18,1.3,.65);
+    box(scene,dugoutMat,x-side*8.65,.65,z,.65,1.3,7);
+    box(scene,dugoutMat,x+side*8.65,.65,z,.65,1.3,7);
+    box(scene,roofMat,x,1.75,z,19,.35,8);
+    box(scene,benchMetal,x,1.05,z+1.2,14,.16,.5);
     for(let j=-2;j<=2;j++){
-      box(scene,benchMetal,x+j*2.5,.62,z+1.25,.16,.95,.16);
-      const torso=add(scene,new THREE.CapsuleGeometry(.34,.55,4,8),uniform,[x+j*2.15,.95,z+.95]);
-      torso.rotation.x=-.18;
-      add(scene,new THREE.SphereGeometry(.23,10,8),skin,[x+j*2.15,1.72,z+.72]);
-      add(scene,new THREE.SphereGeometry(.245,10,8,0,Math.PI*2,0,Math.PI/2),cap,[x+j*2.15,1.84,z+.72]);
-      box(scene,uniform,x+j*2.15,.62,z+1.55,.72,.65,.72);
+      const px=x+j*2.55;
+      box(scene,benchMetal,px,.55,z+1.2,.15,.8,.15);
+      const torso=add(scene,new THREE.CapsuleGeometry(.3,.48,4,8),uniform,[px,.78,z+.9]);torso.rotation.x=-.16;
+      add(scene,new THREE.SphereGeometry(.2,10,8),skin,[px,1.42,z+.68]);
+      add(scene,new THREE.SphereGeometry(.22,10,8,0,Math.PI*2,0,Math.PI/2),cap,[px,1.53,z+.68]);
     }
-    for(let j=-3;j<=3;j++)box(scene,benchMetal,x+j*2.1,.82,z-3.55,.13,1.55,.13);
+    for(let j=-3;j<=3;j++)box(scene,benchMetal,x+j*2.15,.55,z-3.05,.12,1.05,.12);
   }
   const backstop=add(scene,new THREE.TorusGeometry(16,.24,8,64,Math.PI),capMaterial(team),[0,5,29],[Math.PI/2,0,Math.PI]);
-  // Bullpens: two separate warm-up areas beyond the foul territory.
+  // Bullpens beyond the outfield foul territory.
   const bullpenFloor=mat("#a97850",.96),bullpenRail=mat("#344b59",.62,.25);
   for(const side of [-1,1]){
     const bx=side*48,bz=-30;
-    const floor=add(scene,new THREE.CircleGeometry(11,32),bullpenFloor,[bx,.035,bz],[-Math.PI/2,0,0]);
-    floor.scale.set(1.25,.72,1);
-    box(scene,bullpenRail,bx,1.15,bz-9,29,2.3,.55);
-    box(scene,bullpenRail,bx,1.15,bz+9,29,2.3,.55);
-    for(let j=-1;j<=1;j++){
-      const warmup=add(scene,new THREE.CylinderGeometry(1.25,1.25,.25,20),dirt,[bx+j*6,.18,bz]);
-      box(scene,rubber,bx+j*6,.34,bz,.75,.12,.28);
-    }
+    const floor=add(scene,new THREE.CircleGeometry(11,32),bullpenFloor,[bx,.035,bz],[-Math.PI/2,0,0]);floor.scale.set(1.25,.72,1);
+    box(scene,bullpenRail,bx,1.15,bz-9,29,2.3,.55);box(scene,bullpenRail,bx,1.15,bz+9,29,2.3,.55);
+    for(let j=-1;j<=1;j++){add(scene,new THREE.CylinderGeometry(1.25,1.25,.25,20),dirt,[bx+j*6,.18,bz]);box(scene,rubber,bx+j*6,.34,bz,.75,.12,.28)}
     box(scene,roofMat,bx,4.2,bz-9,30,.45,3);
     for(let j=-2;j<=2;j++)box(scene,dugoutMat,bx+j*5,2,bz-9,.35,3.5,.35);
-  }
-  // Visible player benches inside each dugout.
-  for(const side of [-1,1]){
-    const x=side*24,z=16.2;
-    for(let row=0;row<2;row++){
-      box(scene,mat("#9b7652"),x,1.05+row*.45,z+row*1.2,12,.22,.55);
-      for(let j=-2;j<=2;j++)box(scene,mat("#344653"),x+j*2.4,1.65+row*.45,z+row*1.2,.18,.85,.18);
-    }
   }
   return {grass,dirt};
 }
