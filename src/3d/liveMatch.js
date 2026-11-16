@@ -81,6 +81,16 @@ const PITCHES={
   sinker:{label:"싱커",speed:36,breakX:1.1,breakY:-1.6,stamina:1.05}
 };
 const BASE_POSITIONS={first:new THREE.Vector3(10,.5,11),second:new THREE.Vector3(0,.5,0),third:new THREE.Vector3(-10,.5,11),home:new THREE.Vector3(0,.5,22)};
+function getFenceStatus(position,fence={}){
+  const a0=Math.atan2(position.z,position.x),angle=a0<0?a0+Math.PI*2:a0;
+  if(angle<Math.PI||angle>Math.PI*2)return {wall:false,over:false};
+  const shape={left:78,center:92,right:78,leftHeight:8,centerHeight:10,rightHeight:8,...fence};
+  const t=(Math.cos(angle)+1)/2;
+  const radius=t<.5?shape.left+(shape.center-shape.left)*t*2:shape.center+(shape.right-shape.center)*(t-.5)*2;
+  const height=t<.5?shape.leftHeight+(shape.centerHeight-shape.leftHeight)*t*2:shape.centerHeight+(shape.rightHeight-shape.centerHeight)*(t-.5)*2;
+  const distance=Math.hypot(position.x,position.z);
+  return {wall:distance>=radius,over:distance>=radius&&position.y>height};
+}
 
 export async function mountLiveMatch(host,team,player,match,onChange,onFinish,opponentTeam=null){
   if(!host)return()=>{};
@@ -352,8 +362,9 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   };
   const resolveHitPlay=()=>{
     if(playResolved||!ball)return;playResolved=true;
-    const wall=ball.position.z< -75;
-    if(wall){atBatResult="홈런";advanceBatter(4);setResult("홈런! 타구가 담장을 넘어갑니다.");}
+    const fence=getFenceStatus(ball.position,team.fence);
+    if(fence.over||fieldingResult==="homer"){atBatResult="홈런";advanceBatter(4);setResult("홈런! 타구가 담장을 넘어갑니다.");}
+    else if(fence.wall||fieldingResult==="wall"){atBatResult="2루타";advanceBatter(2);setResult("담장을 맞혔습니다! 2루타!");}
     else if(fieldingResult==="caught"){outs++;atBatResult="플라이 아웃";setResult("포구 성공! 아웃입니다.");}
     else if(fieldingResult==="ground"){atBatResult="안타";advanceBatter(ball.position.z< -42?2:1);setResult(ball.position.z< -42?"장타! 2루타!":"안타! 주자가 진루합니다.");}
     else{fieldingResult="ground";atBatResult="안타";advanceBatter(ball.position.z< -42?2:1);setResult("야수가 타구를 처리하지 못했습니다. 주자가 진루합니다.");}
@@ -548,7 +559,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
           pitchClock+=dt;
           if(activeFielder&&!manualFielding){const target=ball.position.clone();target.y=0;const delta=target.sub(activeFielder.position);const distance=delta.length();if(distance>0.01)activeFielder.position.add(delta.normalize().multiplyScalar(Math.min(distance,dt*18)));const horizontal=Math.hypot(activeFielder.position.x-ball.position.x,activeFielder.position.z-ball.position.z);if(horizontal<2.7&&ball.position.y<6&&ballVelocity.y<0){fieldingResult="caught";ball.position.copy(activeFielder.position).add(new THREE.Vector3(0,1,0));ballVelocity.set(0,0,0);resolveHitPlay()}}
           if(ball&&phase==="fielding"&&ball.position.y<=.22&&ballVelocity.y<0){ball.position.y=.22;ballVelocity.y=Math.abs(ballVelocity.y)*.27;ballVelocity.multiplyScalar(.78);if(ballVelocity.length()<2){fieldingResult="ground";resolveHitPlay()}}
-          if(ball&&phase==="fielding"&&(ball.position.z< -92||ball.position.x>105||ball.position.x< -105)){if(ball.position.y>5){atBatResult="홈런";fieldingResult="ground"}else if(!fieldingResult)fieldingResult="ground";resolveHitPlay()}
+          if(ball&&phase==="fielding"){const fence=getFenceStatus(ball.position,team.fence);if(fence.over){fieldingResult="homer";resolveHitPlay()}else if(fence.wall){fieldingResult="wall";resolveHitPlay()}else if(ball.position.x>105||ball.position.x< -105){fieldingResult="ground";resolveHitPlay()}}
           if(ball&&phase==="fielding"&&pitchClock>7&&!playResolved){fieldingResult="ground";resolveHitPlay()}
         }
         if(phase==="throw-flight"){
