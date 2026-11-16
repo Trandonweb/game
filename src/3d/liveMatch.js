@@ -70,7 +70,7 @@ function makeScoreboard(scene,team,opponent){
   const tex=new THREE.CanvasTexture(board);tex.colorSpace=THREE.SRGBColorSpace;
   const mesh=addMesh(scene,new THREE.PlaneGeometry(30,7),new THREE.MeshBasicMaterial({map:tex}),[0,23,-105]);
   mesh.lookAt(0,18,0);
-  return {canvas,ctx,texture:tex,mesh};
+  return {canvas:board,ctx,texture:tex,mesh};
 }
 
 const PITCHES={
