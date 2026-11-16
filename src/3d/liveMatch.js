@@ -89,10 +89,12 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
 
   const canvas=host.querySelector("#diamond-canvas"),view=host.querySelector(".diamond-game-view"),controls=host.querySelector("#diamond-controls");
   const scoreboard=host.querySelector("#diamond-scoreboard"),caption=host.querySelector("#diamond-caption"),intro=host.querySelector("#diamond-intro"),resultText=host.querySelector("#diamond-result"),countText=host.querySelector("#diamond-count"),phaseLabel=host.querySelector("#diamond-phase-label"),hint=host.querySelector("#diamond-hint"),speedText=host.querySelector("#diamond-speed");
-  let renderer,scene,camera,resizeObserver,raf=0,disposed=false,last=performance.now(),clock=0,introClock=0,phase="intro",viewMode="broadcast",activeControl="auto",pitchKind="fastball",aim={x:0,y:0},pitchClock=0,swingClock=0,swingPressed=false,swingAttempted=false,pendingBunt=false,ball=null,ballVelocity=new THREE.Vector3(),ballSpin=0,battingPlayer=null,pitchingPlayer=null,catcher=null,umpire=null,activeFielder=null,activeFielderIndex=0,fielders=[],benchView=false,ballInPlay=false,playResolved=false,selectedSteal=0,scoreRuns=match.userRuns||0,opponentRuns=match.opponentRuns||0,outs=match.outs||0,balls=match.balls||0,strikes=match.strikes||0,hits=match.hits||0,homeRuns=match.homeRuns||0,strikeouts=match.strikeouts||0,pitches=match.pitches||0,inning=match.inning||1,half=match.half||"top",bases=Array.isArray(match.bases)?match.bases.slice(0,3):[false,false,false],userAtBatDone=false,finished=false,autoTimer=0,swingPressed=false,throwTarget=null,throwClock=0,fieldingResult=null,atBatResult="",runLog=[],introPlayers=[],pitchTarget={x:0,y:2.45},selectedPitch="fastball",isTouchingZone=false,zonePointer=null,manualFielding=false;
+  let renderer,scene,camera,resizeObserver,raf=0,disposed=false,last=performance.now(),clock=0,introClock=0,phase="intro",viewMode="broadcast",activeControl="auto",pitchKind="fastball",aim={x:0,y:0},pitchClock=0,swingClock=0,swingPressed=false,swingAttempted=false,pendingBunt=false,ball=null,ballVelocity=new THREE.Vector3(),ballSpin=0,battingPlayer=null,pitchingPlayer=null,catcher=null,umpire=null,activeFielder=null,activeFielderIndex=0,fielders=[],benchView=false,ballInPlay=false,playResolved=false,selectedSteal=0,scoreRuns=match.userRuns||0,opponentRuns=match.opponentRuns||0,outs=match.outs||0,balls=match.balls||0,strikes=match.strikes||0,hits=match.hits||0,homeRuns=match.homeRuns||0,strikeouts=match.strikeouts||0,pitches=match.pitches||0,inning=match.inning||1,half=match.half||"top",bases=Array.isArray(match.bases)?match.bases.slice(0,3):[false,false,false],userAtBatDone=false,finished=false,autoTimer=0,throwTarget=null,throwClock=0,fieldingResult=null,atBatResult="",runLog=[],introPlayers=[],pitchTarget={x:0,y:2.45},selectedPitch="fastball",isTouchingZone=false,zonePointer=null,manualFielding=false;
   const players=[],fieldObjects=[],fieldMaterial=material("#3e7b42"),ballMaterial=material("#f8f7ef",.32),whiteMaterial=material("#f4f1e9");
   const baseColors=["#f1eee4","#f1eee4","#f1eee4"];
-  const playerRole=player.role==="pitcher"?"pitcher":"batter";
+  const playerRole=match.playerRole||(player.role==="pitcher"?"pitcher":"batter");
+  const batterStats=player.isTwp?(player.role==="pitcher"?player.secondaryAttributes:player.attributes):(player.role==="pitcher"?null:player.attributes);
+  const pitcherStats=player.isTwp?(player.role==="pitcher"?player.attributes:player.pitcherAttributes):(player.role==="pitcher"?player.attributes:null);
   const isTeamControl=match.controlMode==="team";
   const getUserHalfMode=()=>half==="bottom"?(playerRole==="batter"||isTeamControl?"bat":"auto"):(playerRole==="pitcher"||isTeamControl?"pitch":"auto");
   const currentTeamScore=()=>scoreRuns;
@@ -221,7 +223,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     if(!ball)return {quality:0,grade:"헛스윙",inZone:false};
     const targetZ=19.4,dist=Math.abs(ball.position.z-targetZ),zone=ball.position.x>-.95&&ball.position.x<.95&&ball.position.y>1.15&&ball.position.y<3.75;
     const timingScore=clamp(1-dist/3.8,0,1),locationScore=zone?clamp(1-Math.abs(ball.position.x)/1.9,0,1):.1;
-    const skill=clamp(((player.attributes?.contact??player.pitcherAttributes?.control??60)-45)/65,.25,1);
+    const skill=clamp(((batterStats?.contact??60)-45)/65,.25,1);
     const quality=timingScore*.67+locationScore*.2+skill*.13;
     const grade=quality>.83?"완벽":quality>.62?"좋음":quality>.42?"조금 빠름/늦음":"헛스윙";
     return {quality,grade,inZone:zone};
@@ -248,8 +250,8 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
   };
   const pitchResultForAi=()=>{
     if(!ball)return;
-    const inZone=classifyPitch(pitchTarget),control=player.pitcherAttributes?.control??player.attributes?.control??60;
-    const stuff=player.pitcherAttributes?.stuff??player.attributes?.stuff??60;
+    const inZone=classifyPitch(pitchTarget),control=pitcherStats?.control??60;
+    const stuff=pitcherStats?.stuff??60;
     const swingChance=inZone?.64:.24;
     const swings=Math.random()<swingChance+(stuff-60)*.002;
     if(!swings){
@@ -374,7 +376,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
   }
   function steal(base){
     if(!bases[base-1]||phase!=="ready")return setResult("해당 베이스에 주자가 없습니다.");
-    selectedSteal=base;setResult(base+"루 주자가 도루를 시도합니다.");const chance=.55+(player.attributes?.speed??60)*.003-(player.pitcherAttributes?.control??60)*.001;
+    selectedSteal=base;setResult(base+"루 주자가 도루를 시도합니다.");const chance=.55+(batterStats?.speed??60)*.003-(pitcherStats?.control??60)*.001;
     if(Math.random()<chance){bases[base-1]=false;if(base===1)bases[1]=true;else if(base===2)bases[2]=true;else scoreRuns++;setResult("도루 성공! 주자가 진루했습니다.");}
     else{outs++;bases[base-1]=false;setResult("도루 실패! 주자가 태그 아웃되었습니다.");if(outs>=3)finishHalf()}
     updateMatch();
