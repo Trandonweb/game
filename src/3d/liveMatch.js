@@ -33,7 +33,7 @@ function makePlayer(teamColor="#315c82",number="7",kind="fielder"){
     arms.push({shoulder,elbow,side});
   }
   const belt=addMesh(root,new THREE.BoxGeometry(.49,.07,.32),material("#26323c"),[0,1.01,0]);
-  const batPivot=new THREE.Group();batPivot.position.set(.28,1.47,-.34);batPivot.rotation.x=-.25;root.add(batPivot);
+  const batPivot=new THREE.Group();batPivot.position.set(.28,1.47,-.34);batPivot.rotation.x=-.25;batPivot.visible=kind==="batter";root.add(batPivot);
   const batGrip=addMesh(batPivot,new THREE.CylinderGeometry(.035,.04,.42,10),material("#765033"),[0,.2,0]);
   const batBarrel=addMesh(batPivot,new THREE.CylinderGeometry(.065,.115,.88,12),material("#c89a5e"),[0,.82,0]);
   batBarrel.rotation.z=-.035;
@@ -102,6 +102,21 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     scoreboard.innerHTML='<span class="diamond-inning">'+inning+'회 '+(half==="top"?"초":"말")+'</span><span class="diamond-team-score"><i class="away-dot"></i>'+opponentRuns+'</span><span class="diamond-team-score"><i class="home-dot"></i>'+scoreRuns+'</span><span class="diamond-bases"><i class="'+(bases[1]?"on":"")+'"></i><i class="'+(bases[2]?"on":"")+'"></i><i class="'+(bases[0]?"on":"")+'"></i></span><span class="diamond-out-count">'+outs+' OUT</span>';
     countText.textContent="B "+balls+"　S "+strikes+"　O "+outs;
     onChange?.(match);
+  };
+  const updateSides=()=>{
+    const homeBatting=half==="bottom";
+    const userBatter=scene?.userData?.userBatter,awayBatter=scene?.userData?.awayBatter;
+    const userPitcher=scene?.userData?.userPitcher,awayPitcher=scene?.userData?.awayPitcher;
+    const homeCatcher=scene?.userData?.homeCatcher,awayCatcher=scene?.userData?.awayCatcher;
+    battingPlayer=homeBatting?userBatter:awayBatter;
+    pitchingPlayer=homeBatting?awayPitcher:userPitcher;
+    catcher=homeBatting?awayCatcher:homeCatcher;
+    if(userBatter)userBatter.visible=homeBatting;if(awayBatter)awayBatter.visible=!homeBatting;
+    if(userPitcher)userPitcher.visible=!homeBatting;if(awayPitcher)awayPitcher.visible=homeBatting;
+    if(homeCatcher)homeCatcher.visible=!homeBatting;if(awayCatcher)awayCatcher.visible=homeBatting;
+    fielders=homeBatting?scene.userData.awayFielders:scene.userData.homeFielders;
+    scene.userData.homeFielders.forEach(f=>f.visible=!homeBatting);
+    scene.userData.awayFielders.forEach(f=>f.visible=homeBatting);
   };
   const setPhaseMode=()=>{
     activeControl=getUserHalfMode();
@@ -286,6 +301,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     phase="result";clearBall();outs=0;balls=0;strikes=0;bases=[false,false,false];userAtBatDone=false;
     if(half==="top"){half="bottom";setResult("공수 교대! "+inning+"회 말 공격입니다.");}
     else{half="top";inning++;setResult(inning>9?"정규 이닝 종료":"이닝 종료! "+inning+"회 초 수비입니다.");}
+    updateSides();
     if(inning>9){finished=true;phase="finished";phaseLabel.textContent="FINAL";setResult(scoreRuns===opponentRuns?"경기 종료 · 무승부":scoreRuns>opponentRuns?"경기 종료 · 승리!":"경기 종료 · 패배");renderControls();updateMatch();onFinish?.(match);return}
     updateMatch();setPhaseMode();
   };
@@ -413,13 +429,22 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     renderer.shadowMap.enabled=!mobile;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     scene=createGamePark(team);camera=new THREE.PerspectiveCamera(48,1,.1,650);
     const home=team.primary||"#315c82";
-    const defenseColor=playerRole==="pitcher"?home:opponent.primary;
-    battingPlayer=makePlayer(playerRole==="pitcher"?opponent.primary:home,player.number||"7","batter");battingPlayer.position.set(-1.2,0,21.6);battingPlayer.rotation.y=0;scene.add(battingPlayer);players.push(battingPlayer);
-    pitchingPlayer=makePlayer(playerRole==="pitcher"?home:opponent.primary,"1","pitcher");pitchingPlayer.position.set(0,0,-1.3);pitchingPlayer.rotation.y=Math.PI;scene.add(pitchingPlayer);players.push(pitchingPlayer);
-    catcher=makePlayer(defenseColor,"2","catcher");catcher.position.set(0,0,25.8);catcher.rotation.y=0;scene.add(catcher);players.push(catcher);
-    umpire=makePlayer("#242c34","0","umpire");umpire.scale.set(.88,.95,.88);umpire.position.set(0,0,27.4);scene.add(umpire);players.push(umpire);
+    const userBatter=makePlayer(home,player.number||"7","batter");userBatter.position.set(-1.2,0,21.6);userBatter.rotation.y=0;scene.add(userBatter);
+    const awayBatter=makePlayer(opponent.primary,"1","batter");awayBatter.position.set(-1.2,0,21.6);awayBatter.rotation.y=0;scene.add(awayBatter);
+    const userPitcher=makePlayer(home,"1","pitcher");userPitcher.position.set(0,0,-1.3);userPitcher.rotation.y=Math.PI;scene.add(userPitcher);
+    const awayPitcher=makePlayer(opponent.primary,"1","pitcher");awayPitcher.position.set(0,0,-1.3);awayPitcher.rotation.y=Math.PI;scene.add(awayPitcher);
+    const homeCatcher=makePlayer(home,"2","catcher");homeCatcher.position.set(0,0,25.8);homeCatcher.rotation.y=0;scene.add(homeCatcher);
+    const awayCatcher=makePlayer(opponent.primary,"2","catcher");awayCatcher.position.set(0,0,25.8);awayCatcher.rotation.y=0;scene.add(awayCatcher);
+    const umpireModel=makePlayer("#242c34","0","umpire");umpireModel.scale.set(.88,.95,.88);umpireModel.position.set(0,0,27.4);scene.add(umpireModel);umpire=umpireModel;
+    players.push(userBatter,awayBatter,userPitcher,awayPitcher,homeCatcher,awayCatcher,umpireModel);
     const positions=[[-10,0,11],[10,0,11],[-8,0,2],[8,0,2],[-34,0,-32],[0,0,-57],[34,0,-32],[0,0,-18]];
-    positions.forEach((p,i)=>{const f=makePlayer(defenseColor,String(i+3),"fielder");f.position.set(p[0],0,p[2]);scene.add(f);fielders.push(f)});
+    const homeFielders=[],awayFielders=[];
+    positions.forEach((p,i)=>{
+      const hf=makePlayer(home,String(i+3),"fielder");hf.position.set(p[0],0,p[2]);scene.add(hf);homeFielders.push(hf);players.push(hf);
+      const af=makePlayer(opponent.primary,String(i+3),"fielder");af.position.set(p[0],0,p[2]);scene.add(af);awayFielders.push(af);players.push(af);
+    });
+    scene.userData.userBatter=userBatter;scene.userData.awayBatter=awayBatter;scene.userData.userPitcher=userPitcher;scene.userData.awayPitcher=awayPitcher;scene.userData.homeCatcher=homeCatcher;scene.userData.awayCatcher=awayCatcher;scene.userData.homeFielders=homeFielders;scene.userData.awayFielders=awayFielders;
+    updateSides();
     addStrikeZone(scene);
     makeBall(new THREE.Vector3(0,2.3,-1));
     resizeObserver=new ResizeObserver(resize);resizeObserver.observe(view);resize();
