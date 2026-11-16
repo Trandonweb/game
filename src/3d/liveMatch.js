@@ -62,7 +62,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
   if(!host)return()=>{};
   host.innerHTML='<section class="game3d-shell"><div class="game3d-top"><div><div class="eyebrow">DIAMOND · 3D GAME</div><h2>'+team.name+' · 홈 경기</h2></div><div class="game3d-score" id="game3d-score">1회 초　0 : 0　0 OUT</div></div><div class="game3d-stage"><div class="game3d-loading" id="game3d-loading">선수단 입장 준비 중…</div><canvas id="game3d-canvas"></canvas><div class="game3d-caption" id="game3d-caption">선수단 입장</div></div><div class="game3d-toolbar"><div class="game3d-modes"><button class="btn active" data-mode="bat">직접 타격</button><button class="btn" data-mode="pitch">직접 투구</button><button class="btn" data-mode="field">직접 수비</button><button class="btn" data-mode="bench">벤치 관전</button></div><div class="game3d-controls" id="game3d-controls"><span>선수단 입장 중입니다.</span></div><div class="game3d-bottom"><span id="game3d-result">플레이 볼!</span><button class="btn btn-primary" id="game3d-finish" type="button">경기 종료</button></div></div></section>';
   const canvas=host.querySelector("#game3d-canvas"),stage=host.querySelector(".game3d-stage"),controls=host.querySelector("#game3d-controls"),caption=host.querySelector("#game3d-caption"),result=host.querySelector("#game3d-result"),score=host.querySelector("#game3d-score"),loading=host.querySelector("#game3d-loading");
-  let renderer,scene,camera,raf=0,disposed=false,last=performance.now(),mode="bat",phase="intro",introTime=0,ball=null,ballVelocity=new THREE.Vector3(),pitchClock=0,swingWindow=0,fielding=false,scoreRuns=match.userRuns||0,opponentRuns=match.opponentRuns||0,outs=match.outs||0,balls=match.balls||0,strikes=match.strikes||0,pitches=match.pitches||0,hits=match.hits||0,homeRuns=match.homeRuns||0,strikeouts=match.strikeouts||0,atBat=0,move={x:0,z:0},lastResult="선수단 입장",lastSwing=0,finished=false;
+  let renderer,scene,camera,raf=0,disposed=false,last=performance.now(),mode=player.role==="pitcher"?"pitch":"bat",phase="intro",introTime=0,ball=null,ballVelocity=new THREE.Vector3(),pitchClock=0,swingWindow=0,fielding=false,scoreRuns=match.userRuns||0,opponentRuns=match.opponentRuns||0,outs=match.outs||0,balls=match.balls||0,strikes=match.strikes||0,pitches=match.pitches||0,hits=match.hits||0,homeRuns=match.homeRuns||0,strikeouts=match.strikeouts||0,atBat=0,move={x:0,z:0},lastResult="선수단 입장",lastSwing=0,finished=false;
   const players=[],mix={};let batter,pitcher,umpire,bat,fielder,userFielder,cameraTarget;
   const fieldMaterial=mat("#367a3e"),ballMaterial=mat("#f7f4e9"),white=mat("#f4f1e9");
   const clock=new THREE.Clock();
@@ -78,31 +78,32 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     else if(mode==="field")controls.innerHTML='<span>WASD / 방향키 이동 · 스페이스 포구</span><button class="btn btn-primary" id="catch-button">포구</button><button class="btn" id="throw-base">1루 송구</button>';
     else controls.innerHTML='<span>벤치 관전 모드 · 카메라가 경기 흐름을 따라갑니다.</span><button class="btn" id="resume-play">플레이로 복귀</button>';
   };
-  const resetAtBat=()=>{phase=mode==="pitch"?"pitch":"bat";balls=0;strikes=0;pitchClock=1.2;swingWindow=0;spawnBall(new THREE.Vector3(0,2.2,-1));setResult("다음 타석 준비");renderControls();updateMatch()};
+  const nextPitch=()=>{phase=mode==="pitch"?"pitch":"bat";pitchClock=1.2;swingWindow=0;spawnBall(new THREE.Vector3(0,2.2,-1));renderControls();updateMatch()};
+  const resetAtBat=()=>{balls=0;strikes=0;setResult("다음 타석 준비");nextPitch()};
   const makePitch=()=>{
     if(finished||phase!=="bat")return;
     pitches++;phase="pitch-flight";pitchClock=0;const targetX=(Math.random()-.5)*1.7,targetY=1.8+Math.random()*1.1;
-    ballVelocity.set(targetX*.22,(targetY-2.2)*.12,12.5+Math.random()*2.2);swingWindow=.65;
+    ballVelocity.set(targetX*.22,(targetY-2.2)*.12,40+Math.random()*4);swingWindow=.78;
     setResult("투수가 공을 던졌습니다! 타이밍을 맞추세요.");updateMatch();
   };
   const swing=()=>{
     if(mode!=="bat"||phase!=="pitch-flight"||finished)return;
-    const timing=Math.abs(pitchClock-.48),good=timing<.16;
+    const timing=Math.abs(pitchClock-.62),good=timing<.17&&ball.position.z>14&&ball.position.z<30;
     lastSwing=pitchClock;phase="hit-flight";
     if(good){
       const launch=0.32+Math.random()*.42;ballVelocity.set((Math.random()-.5)*13,7+launch*12,-(22+Math.random()*12));
       hits++;const homer=launch>.58&&Math.abs(ballVelocity.x)<8;if(homer){homeRuns++;scoreRuns++;setResult("ホーム런! 타구가 담장을 넘어갑니다!")}else setResult("정타! 타구가 외야로 뻗어갑니다.");
       if(homer)scoreRuns++;
     }else{
-      strikes++;ballVelocity.set((Math.random()-.5)*3,1,-8);setResult(timing<.32?"파울 또는 빗맞은 타구":"헛스윙! 타이밍이 늦었습니다.");
+      strikes++;phase="miss-flight";ballVelocity.set((Math.random()-.5)*1.5,1,12);setResult(timing<.32?"파울 또는 빗맞은 타구":"헛스윙! 타이밍이 늦었습니다.");
     }
     updateMatch();swingWindow=0;
   };
-  const pitchUser=()=>{if(mode!=="pitch"||finished||phase!=="pitch")return;phase="pitch-flight";pitches++;pitchClock=0;ballVelocity.set((Math.random()-.5)*1.4,(Math.random()-.5)*.6,13);setResult("투구! 타자의 반응을 확인하세요.");updateMatch()};
-  const beginFielding=()=>{mode="field";fielding=true;phase="fielding";host.querySelectorAll("[data-mode]").forEach(b=>b.classList.toggle("active",b.dataset.mode==="field"));const start=new THREE.Vector3(0,2,-5);spawnBall(start);ballVelocity.set((Math.random()-.5)*10,7,-13);camera.position.set(20,12,-18);camera.lookAt(0,2,-25);setResult("타구 발생! 수비수가 공을 향해 이동합니다.");renderControls()};
+  const pitchUser=()=>{if(mode!=="pitch"||finished||phase!=="pitch")return;phase="pitch-flight";pitches++;pitchClock=0;const pitch=mix.pitch||"fastball";ballVelocity.set((Math.random()-.5)*(pitch==="slider"?4:1.4),(pitch==="curve"?-1.8:(Math.random()-.5)*.6),pitch==="fastball"?42:pitch==="slider"?38:35);setResult("투구! 타자의 반응을 확인하세요.");updateMatch()};
+  const beginFielding=()=>{mode="field";fielding=true;phase="fielding";host.querySelectorAll("[data-mode]").forEach(b=>b.classList.toggle("active",b.dataset.mode==="field"));camera.position.set(20,12,-18);camera.lookAt(0,2,-25);setResult("타구 발생! 수비수가 공을 향해 이동합니다.");renderControls()};
   const catchBall=()=>{if(phase!=="fielding"||!ball)return;const d=userFielder.position.distanceTo(ball.position);if(d<8){phase="caught";setResult("포구 성공! 타자 주자를 아웃 처리했습니다.");updateMatch()}else setResult("아직 공과 거리가 있습니다. 수비수를 더 이동하세요.")};
   const moveFielder=(dx,dz)=>{if(mode!=="field")return;move.x=dx;move.z=dz;userFielder.position.x=clamp(userFielder.position.x+dx*1.7,-48,48);userFielder.position.z=clamp(userFielder.position.z+dz*1.7,-80,15)};
-  const finishAtBat=()=>{if(phase==="caught"||phase==="pitch-flight"){outs=Math.min(3,outs+1);setResult("플레이 종료 · 다음 타자 준비");}else if(phase==="fielding"){setResult("타구 처리 완료 · 다음 타자 준비");}atBat++;if(outs>=3){outs=0;match.inning=(match.inning||1)+1;match.half=match.half==="top"?"bottom":"top";if(match.inning>9){finished=true;phase="finished";setResult("9이닝 경기 종료");renderControls();updateMatch();onFinish?.(match);return;}}resetAtBat()};
+  const finishAtBat=()=>{if(phase==="caught"||phase==="pitch-flight"){outs=Math.min(3,outs+1);setResult("플레이 종료 · 다음 타자 준비");}else if(phase==="fielding"){setResult("타구 처리 완료 · 다음 타자 준비");}atBat++;if(outs>=3){outs=0;match.inning=(match.inning||1)+1;match.half=match.half==="top"?"bottom":"top";if(match.inning>9){finished=true;phase="finished";match.finished=true;setResult("9이닝 경기 종료");renderControls();updateMatch();onFinish?.(match);return;}}mode=player.role==="pitcher"?"pitch":"bat";host.querySelectorAll("[data-mode]").forEach(b=>b.classList.toggle("active",b.dataset.mode===mode));resetAtBat()};
   const onKey=e=>{if(e.repeat)return;if([" ","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key))e.preventDefault();if(e.key===" "){if(mode==="bat")swing();else if(mode==="field")catchBall();}if(e.key==="ArrowLeft"||e.key==="a")moveFielder(-1,0);if(e.key==="ArrowRight"||e.key==="d")moveFielder(1,0);if(e.key==="ArrowUp"||e.key==="w")moveFielder(0,-1);if(e.key==="ArrowDown"||e.key==="s")moveFielder(0,1)};
   const onPointer=e=>{if(e.target.closest("button"))return;if(mode==="bat")swing();else if(mode==="pitch")pitchUser()};
   const onControl=e=>{
@@ -110,7 +111,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     if(b.dataset.mode){setMode(b.dataset.mode);return}
     if(b.id==="skip-intro"){phase="bat";introTime=7;loading?.remove();setResult("플레이 볼!");renderControls();resetAtBat();return}
     if(b.id==="swing-button")swing();
-    if(b.id==="take-button"){if(phase==="pitch-flight"){if(ballVelocity.z>0){balls++;setResult("볼을 골랐습니다.")}else{strikes++;setResult("스트라이크를 지켜봤습니다.")}resetAtBat()}}
+    if(b.id==="take-button"){if(phase==="pitch-flight"){if(Math.random()<.42){balls++;setResult("볼을 골랐습니다.")}else{strikes++;setResult("스트라이크를 지켜봤습니다.")}if(balls>=4){balls=0;strikes=0;setResult("볼넷! 주자가 출루했습니다.")}if(strikes>=3){outs++;strikeouts++;balls=0;strikes=0;setResult("루킹 삼진!") }nextPitch()}}
     if(b.dataset.pitch){controls.querySelectorAll("[data-pitch]").forEach(x=>x.classList.toggle("active",x===b));mix.pitch=b.dataset.pitch}
     if(b.id==="throw-button")pitchUser();
     if(b.id==="catch-button")catchBall();
@@ -133,20 +134,22 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
   };
   const animate=()=>{
     if(disposed)return;raf=requestAnimationFrame(animate);const now=performance.now(),dt=Math.min((now-last)/1000,.05);last=now;
-    if(phase==="intro"){introTime+=dt;camera.position.set(Math.sin(introTime*.24)*72,24+Math.sin(introTime*.6)*4,Math.cos(introTime*.24)*72-12);camera.lookAt(0,3,-12);if(introTime>2){pitcher.rotation.y=Math.sin(introTime*2)*.12;batter.rotation.y=Math.PI*.1+Math.sin(introTime*2)*.04}if(introTime>7){phase="bat";setResult("플레이 볼! 1회 초 시작");renderControls();resetAtBat()}}
+    if(phase==="intro"){introTime+=dt;camera.position.set(Math.sin(introTime*.24)*72,24+Math.sin(introTime*.6)*4,Math.cos(introTime*.24)*72-12);camera.lookAt(0,3,-12);if(introTime>2){pitcher.rotation.y=Math.sin(introTime*2)*.12;batter.rotation.y=Math.PI*.1+Math.sin(introTime*2)*.04}if(introTime>7){phase=mode==="pitch"?"pitch":"bat";setResult("플레이 볼! 1회 초 시작");renderControls();resetAtBat()}}
     if(phase==="bat"){pitchClock+=dt;if(pitchClock>1.7){makePitch();pitchClock=0}}
-    if(phase==="pitch-flight"||phase==="hit-flight"||phase==="fielding"){
+    if(phase==="pitch-flight"||phase==="miss-flight"||phase==="hit-flight"||phase==="fielding"){
       if(ball){ball.position.addScaledVector(ballVelocity,dt);ballVelocity.y-=9.8*dt;if(ball.position.y<.2){ball.position.y=.2;ballVelocity.y*=-.32;if(Math.abs(ballVelocity.y)<1)ballVelocity.y=0}
         pitchClock+=dt;
-        if(phase==="pitch-flight"&&ball.position.z>26){strikes++;setResult("스트라이크!");resetAtBat()}
+        if((phase==="pitch-flight"||phase==="miss-flight")&&ball.position.z>26){if(phase==="pitch-flight"){strikes++;setResult("스트라이크!");if(strikes>=3){outs++;strikeouts++;strikes=0;balls=0;setResult("삼진! 타자를 돌려세웠습니다.")}}nextPitch()}
         else if(phase==="hit-flight"&&pitchClock>1.3){beginFielding()}
-        else if(phase==="fielding"){const target=ball.position.clone();target.y=0;const dx=target.x-userFielder.position.x,dz=target.z-userFielder.position.z;userFielder.position.x+=clamp(dx,-1,1)*dt*8;userFielder.position.z+=clamp(dz,-1,1)*dt*8;if(ball.position.z>30||ball.position.x>100||ball.position.x< -100){finishAtBat()}}
+        else if(phase==="fielding"){const target=ball.position.clone();target.y=0;const dx=target.x-userFielder.position.x,dz=target.z-userFielder.position.z;userFielder.position.x+=clamp(dx,-1,1)*dt*8;userFielder.position.z+=clamp(dz,-1,1)*dt*8;if(ball.position.z>30||ball.position.z< -115||ball.position.x>100||ball.position.x< -100){finishAtBat()}}
       }
     }
     if(mode==="bench"&&phase!=="intro"){camera.position.lerp(new THREE.Vector3(42,15,34),.025);camera.lookAt(0,3,-12)}
+    if(pitcher?.userData.arms?.[1])pitcher.userData.arms[1].pivot.rotation.x=Math.sin(now*.006)*.35;
+    if(batter?.userData.arms?.[0]&&phase==="hit-flight")batter.userData.arms[0].pivot.rotation.x=-1.2;
     renderer.render(scene,camera);
   };
-  const onFinishClick=()=>{finished=true;phase="finished";updateMatch();onFinish?.(match)};
+  const onFinishClick=()=>{finished=true;phase="finished";match.finished=true;updateMatch();onFinish?.(match)};
   host.addEventListener("click",onControl);canvas.addEventListener("pointerdown",onPointer);window.addEventListener("keydown",onKey);host.querySelector("#game3d-finish").addEventListener("click",onFinishClick);
   try{init();animate()}catch(error){loading.textContent="3D 경기장을 불러오지 못했습니다. 브라우저의 WebGL 지원을 확인해 주세요.";throw error}
   return()=>{disposed=true;cancelAnimationFrame(raf);window.removeEventListener("keydown",onKey);host.removeEventListener("click",onControl);canvas.removeEventListener("pointerdown",onPointer);mix.observer?.disconnect();scene?.traverse(o=>{o.geometry?.dispose?.();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{m.map?.dispose?.();m.dispose?.()})}});renderer?.dispose();renderer?.forceContextLoss()};
