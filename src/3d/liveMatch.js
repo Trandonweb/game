@@ -207,11 +207,18 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
   const throwPitch=(isCpu=false)=>{
     if(finished||phase!=="ready"||activeControl!=="pitch"&&!isCpu)return;
     const type=isCpu?Object.keys(PITCHES)[Math.floor(Math.random()*Object.keys(PITCHES).length)]:selectedPitch;
-    const data=PITCHES[type],target=isCpu?{x:(Math.random()-.5)*3.4,y:1.1+Math.random()*2.9}: {x:aim.x*1.8,y:2.45+aim.y*1.6};
-    pitchKind=type;pitchTarget=target;pitches++;pitchClock=0;speedText.textContent=Math.round(data.speed*3.6)+" km/h · "+data.label;phase="pitch-flight";ballInPlay=false;playResolved=false;
+    const data=PITCHES[type],baseControl=isCpu?67:(pitcherStats?.control??60),baseVelocity=isCpu?70:(pitcherStats?.velocity??70),maxStamina=pitcherStats?.stamina??72;
+    let stamina=Number.isFinite(match.pitcherStamina)?match.pitcherStamina:maxStamina;
+    if(!isCpu){stamina=Math.max(0,stamina-data.stamina*.65);match.pitcherStamina=stamina}
+    const fatigue=isCpu?1:clamp(stamina/Math.max(1,maxStamina),.32,1);
+    const effectiveControl=baseControl*(.72+.28*fatigue),speed=clamp(data.speed+(baseVelocity-70)*.12,23,46)*(.88+.12*fatigue);
+    const spread=clamp(1.65-(effectiveControl-40)*.018+(1-fatigue)*.72,.22,2.4);
+    const intended=isCpu?{x:(Math.random()-.5)*2.8,y:1.15+Math.random()*2.65}:{x:aim.x*1.8,y:2.45+aim.y*1.6};
+    const target={x:intended.x+(Math.random()-.5)*spread,y:intended.y+(Math.random()-.5)*spread};
+    pitchKind=type;pitchTarget=target;pitches++;pitchClock=0;speedText.textContent=Math.round(speed*3.6)+" km/h · "+data.label;phase="pitch-flight";ballInPlay=false;playResolved=false;
     const start=new THREE.Vector3(0,2.15,-1.4);makeBall(start);
-    const travel=21.2,seconds=travel/data.speed;
-    ballVelocity.set((target.x-start.x)/seconds+data.breakX*.18,(target.y-start.y)/seconds+4.9*seconds+data.breakY*.18,data.speed);
+    const travel=21.2,seconds=travel/speed;
+    ballVelocity.set((target.x-start.x)/seconds+data.breakX*.18,(target.y-start.y)/seconds+4.9*seconds+data.breakY*.18,speed);
     ballSpin=type==="curve"?2.8:type==="slider"?1.9:1.1;
     pitchingPlayer.userData.arms[1].shoulder.rotation.x=-1.1;
     setResult(isCpu?"투수가 "+data.label+"를 던졌습니다.":"투구! 타자의 반응을 확인하세요.");
@@ -224,7 +231,9 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     const targetZ=19.4,dist=Math.abs(ball.position.z-targetZ),zone=ball.position.x>-.95&&ball.position.x<.95&&ball.position.y>1.15&&ball.position.y<3.75;
     const timingScore=clamp(1-dist/3.8,0,1),locationScore=zone?clamp(1-Math.abs(ball.position.x)/1.9,0,1):.1;
     const skill=clamp(((batterStats?.contact??60)-45)/65,.25,1);
-    const quality=timingScore*.67+locationScore*.2+skill*.13;
+    const guess=match.guess,actual=pitchTarget.x<-.3?"inside":pitchTarget.x>.3?"outside":pitchTarget.y>3?"high":pitchTarget.y<1.9?"low":null;
+    const guessBonus=guess&&guess===actual?.07:0;
+    const quality=clamp(timingScore*.67+locationScore*.2+skill*.13+guessBonus,0,1);
     const grade=quality>.83?"완벽":quality>.62?"좋음":quality>.42?"조금 빠름/늦음":"헛스윙";
     return {quality,grade,inZone:zone};
   };
