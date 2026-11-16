@@ -369,7 +369,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     else if(fieldingResult==="safe"){atBatResult="세이프";advanceBatter(1);setResult("송구보다 주자가 먼저 도착했습니다. 세이프!");}
     else if(fieldingResult==="ground"){atBatResult="안타";advanceBatter(ball.position.z< -42?2:1);setResult(ball.position.z< -42?"장타! 2루타!":"안타! 주자가 진루합니다.");}
     else{fieldingResult="ground";atBatResult="안타";advanceBatter(ball.position.z< -42?2:1);setResult("야수가 타구를 처리하지 못했습니다. 주자가 진루합니다.");}
-    battingPlayer.userData.running=false;battingPlayer.position.set(-1.2,0,21.6);battingPlayer.userData.targetPosition.set(0,0,22);batterRunTimer=0;
+    battingPlayer.userData.running=false;battingPlayer.visible=false;battingPlayer.userData.targetPosition.set(0,0,22);batterRunTimer=0;
     clearBall();phase="result";renderControls();updateMatch();
     if(outs>=3){finishHalf();return}
     if(activeControl==="bat"&&!isTeamControl){runAutoRemaining();}
@@ -402,11 +402,11 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     host.querySelector("#diamond-bench").textContent=benchView?"플레이 시점":"벤치 관전";
   };
   const startBattingTurn=()=>{
-    activeControl="bat";userAtBatDone=false;swingPressed=false;swingAttempted=false;swingClock=0;battingPlayer.position.set(-1.2,0,21.6);battingPlayer.userData.running=false;battingPlayer.userData.targetPosition.set(0,0,22);battingPlayer.userData.batPivot.rotation.x=-.25;battingPlayer.userData.batPivot.rotation.z=-.15;setCamera("batter");phase="ready";pitchClock=0;makeBall(new THREE.Vector3(0,2.3,-1));phaseLabel.textContent="AT BAT";setResult("타석에 들어섰습니다. 투구를 기다리세요.");renderControls();
+    activeControl="bat";userAtBatDone=false;swingPressed=false;swingAttempted=false;swingClock=0;battingPlayer.visible=true;battingPlayer.position.set(-1.2,0,21.6);battingPlayer.userData.running=false;battingPlayer.userData.targetPosition.set(0,0,22);battingPlayer.userData.batPivot.rotation.x=-.25;battingPlayer.userData.batPivot.rotation.z=-.15;setCamera("batter");phase="ready";pitchClock=0;makeBall(new THREE.Vector3(0,2.3,-1));phaseLabel.textContent="AT BAT";setResult("타석에 들어섰습니다. 투구를 기다리세요.");renderControls();
     autoTimer=window.setTimeout(()=>{if(!disposed&&phase==="ready")throwCpuPitch()},800);
   };
   const startPitchingTurn=()=>{
-    activeControl="pitch";battingPlayer.position.set(-1.2,0,21.6);battingPlayer.userData.running=false;battingPlayer.userData.targetPosition.set(0,0,22);setCamera("pitcher");phase="ready";pitchClock=0;makeBall(new THREE.Vector3(0,2.3,-1));phaseLabel.textContent="ON THE MOUND";setResult("투수 시점입니다. 구종과 코스를 정하세요.");renderControls();
+    activeControl="pitch";battingPlayer.visible=true;battingPlayer.position.set(-1.2,0,21.6);battingPlayer.userData.running=false;battingPlayer.userData.targetPosition.set(0,0,22);setCamera("pitcher");phase="ready";pitchClock=0;makeBall(new THREE.Vector3(0,2.3,-1));phaseLabel.textContent="ON THE MOUND";setResult("투수 시점입니다. 구종과 코스를 정하세요.");renderControls();
   };
   const onKey=e=>{
     if(disposed||finished)return;
