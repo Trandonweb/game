@@ -110,7 +110,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     if(activeControl==="bat")startBattingTurn();else if(activeControl==="pitch")startPitchingTurn();
   };
   const makeBall=pos=>{
-    if(ball){scene.remove(ball);ball.geometry.dispose();ball.material.dispose()}
+    if(ball){scene.remove(ball);ball.geometry.dispose()}
     ball=addMesh(scene,new THREE.SphereGeometry(.19,20,16),ballMaterial,pos);
     ball.castShadow=true;return ball;
   };
@@ -190,7 +190,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     if(finished||phase!=="ready"||activeControl!=="pitch"&&!isCpu)return;
     const type=isCpu?Object.keys(PITCHES)[Math.floor(Math.random()*Object.keys(PITCHES).length)]:selectedPitch;
     const data=PITCHES[type],target=isCpu?{x:(Math.random()-.5)*3.4,y:1.1+Math.random()*2.9}: {x:aim.x*1.8,y:2.45+aim.y*1.6};
-    pitchKind=type;pitchTarget=target;pitches++;pitchClock=0;phase="pitch-flight";ballInPlay=false;playResolved=false;
+    pitchKind=type;pitchTarget=target;pitches++;pitchClock=0;speedText.textContent=Math.round(data.speed*3.6)+" km/h · "+data.label;phase="pitch-flight";ballInPlay=false;playResolved=false;
     const start=new THREE.Vector3(0,2.15,-1.4);makeBall(start);
     const travel=21.2,seconds=travel/data.speed;
     ballVelocity.set((target.x-start.x)/seconds+data.breakX*.18,(target.y-start.y)/seconds+4.9*seconds+data.breakY*.18,data.speed);
@@ -290,7 +290,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     },1250);
   };
   const finishHalf=()=>{
-    clearBall();outs=0;balls=0;strikes=0;bases=[false,false,false];userAtBatDone=false;
+    phase="result";clearBall();outs=0;balls=0;strikes=0;bases=[false,false,false];userAtBatDone=false;
     if(half==="top"){half="bottom";setResult("공수 교대! "+inning+"회 말 공격입니다.");}
     else{half="top";inning++;setResult(inning>9?"정규 이닝 종료":"이닝 종료! "+inning+"회 초 수비입니다.");}
     if(inning>9){finished=true;phase="finished";phaseLabel.textContent="FINAL";setResult(scoreRuns===opponentRuns?"경기 종료 · 무승부":scoreRuns>opponentRuns?"경기 종료 · 승리!":"경기 종료 · 패배");renderControls();updateMatch();onFinish?.(match);return}
