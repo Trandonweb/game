@@ -96,7 +96,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const batterStats=player.isTwp?(player.role==="pitcher"?player.secondaryAttributes:player.attributes):(player.role==="pitcher"?null:player.attributes);
   const pitcherStats=player.isTwp?(player.role==="pitcher"?player.attributes:player.pitcherAttributes):(player.role==="pitcher"?player.attributes:null);
   const isTeamControl=match.controlMode==="team";
-  const getUserHalfMode=()=>half==="bottom"?(playerRole==="batter"||isTeamControl?"bat":"auto"):(playerRole==="pitcher"||isTeamControl?"pitch":"auto");
+  const getUserHalfMode=()=>half==="bottom"?(playerRole==="batter"||playerRole==="two-way"||isTeamControl?"bat":"auto"):(playerRole==="pitcher"||playerRole==="two-way"||isTeamControl?"pitch":"auto");
   const currentTeamScore=()=>scoreRuns;
   const setResult=t=>{resultText.textContent=t;caption.textContent=t;match.lastResult=t};
   const updateMatch=()=>{
@@ -252,7 +252,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     battingPlayer.userData.batPivot.rotation.z=-1.8;
     setCamera("field");
     activeFielder=fielders.reduce((best,f)=>!best||f.position.distanceTo(ball.position)<best.position.distanceTo(ball.position)?f:best,null);
-    activeFielderIndex=fielders.indexOf(activeFielder);manualFielding=half==="top"&&(isTeamControl||playerRole==="pitcher");
+    activeFielderIndex=fielders.indexOf(activeFielder);manualFielding=half==="top"&&(isTeamControl||playerRole==="pitcher"||playerRole==="two-way");
     renderControls();updateMatch();
   };
   const swing=(bunt=false)=>{
@@ -315,7 +315,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     if(half==="top"){half="bottom";setResult("공수 교대! "+inning+"회 말 공격입니다.");}
     else{half="top";inning++;setResult(inning>9?"정규 이닝 종료":"이닝 종료! "+inning+"회 초 수비입니다.");}
     updateSides();
-    if(inning>9){finished=true;phase="finished";phaseLabel.textContent="FINAL";setResult(scoreRuns===opponentRuns?"경기 종료 · 무승부":scoreRuns>opponentRuns?"경기 종료 · 승리!":"경기 종료 · 패배");renderControls();updateMatch();return}
+    if(inning>(match.inningsLimit||9)){finished=true;phase="finished";phaseLabel.textContent="FINAL";setResult(scoreRuns===opponentRuns?"경기 종료 · 무승부":scoreRuns>opponentRuns?"경기 종료 · 승리!":"경기 종료 · 패배");renderControls();updateMatch();return}
     updateMatch();setPhaseMode();
   };
   const resolveHitPlay=()=>{
