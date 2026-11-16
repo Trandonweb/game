@@ -260,13 +260,14 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const throwCpuPitch=()=>{if(activeControl==="bat"&&phase==="ready")throwPitch(true)};
   const contactQuality=()=>{
     if(!ball)return {quality:0,grade:"헛스윙",inZone:false};
-    const targetZ=19.4,dist=Math.abs(ball.position.z-targetZ),zone=ball.position.x>-.95&&ball.position.x<.95&&ball.position.y>1.15&&ball.position.y<3.75;
+    const earlyOffset=(pitchTarget.x<-.3||pitchTarget.y>3)?-.55:(pitchTarget.x>.3||pitchTarget.y<1.9)?.55:0;
+    const targetZ=19.4+earlyOffset,dist=Math.abs(ball.position.z-targetZ),zone=ball.position.x>-.95&&ball.position.x<.95&&ball.position.y>1.15&&ball.position.y<3.75;
     const timingScore=clamp(1-dist/3.8,0,1),locationScore=zone?clamp(1-Math.abs(ball.position.x)/1.9,0,1):.1;
     const skill=clamp(((batterStats?.contact??60)-45)/65,.25,1);
     const guess=match.guess,actual=pitchTarget.x<-.3?"inside":pitchTarget.x>.3?"outside":pitchTarget.y>3?"high":pitchTarget.y<1.9?"low":null;
     const guessBonus=(guess&&guess===actual)?0.07:0;
     const quality=clamp(timingScore*.67+locationScore*.2+skill*.13+guessBonus,0,1);
-    const grade=quality>.83?"완벽":quality>.62?"좋음":quality>.42?"조금 빠름/늦음":"헛스윙";
+    const grade=quality>.83?"완벽":quality>.62?"좋음":quality>.42?(ball.position.z>targetZ?"조금 늦음":"조금 빠름"):"헛스윙";
     return {quality,grade,inZone:zone};
   };
   const startHitBall=(quality,fromAi=false)=>{
@@ -274,7 +275,8 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     phase="hit-flight";ballInPlay=true;playResolved=false;pitchClock=0;batterRunTimer=0;throwResult=null;battingPlayer.userData.running=true;battingPlayer.userData.targetPosition=BASE_POSITIONS.first.clone();battingPlayer.userData.targetPosition.y=0;clearTimeout(autoTimer);
     const x=ball.position.x,y=ball.position.y;
     const sweet=quality>.72,launchAngle=sweet?(.38+quality*.52):(.08+quality*.18),batterPower=fromAi?65:(batterStats?.power??65),powerFactor=.85+batterPower/400,speed=(sweet?38+quality*15:20+quality*10)*powerFactor;
-    const direction=clamp((x*.42)+(aim.x*.18)+(Math.random()-.5)*.32,-.9,.9);
+    const insideOrHigh=pitchTarget.x<-.3||pitchTarget.y>3,outsideOrLow=pitchTarget.x>.3||pitchTarget.y<1.9,pullSide=player.bats==="L"?1:-1,pitchDirection=insideOrHigh?pullSide*.3:outsideOrLow?-pullSide*.24:0;
+    const direction=clamp((x*.42)+pitchDirection+(Math.random()-.5)*.32,-.9,.9);
     ballVelocity.set(direction*speed*.42,Math.sin(launchAngle)*speed,-Math.cos(direction*.35)*speed);
     ballSpin=quality*8;
     setResult(quality>.82?"완벽한 타구! 외야로 뻗어갑니다.":quality>.58?"정타! 타구가 필드로 향합니다.":"빗맞은 타구! 수비가 처리합니다.");
@@ -293,7 +295,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     if(!ball)return;
     const inZone=classifyPitch(pitchTarget),control=pitcherStats?.control??60;
     const stuff=pitcherStats?.stuff??60;
-    const swingChance=inZone?.64:.24;
+    const swingChance=inZone?0.64:0.24;
     const swings=Math.random()<swingChance+(stuff-60)*.002;
     if(!swings){
       if(inZone){strikes++;setResult("루킹 스트라이크!")}
@@ -303,7 +305,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
       else nextPitch();
       return;
     }
-    const quality=clamp(Math.random()*.58+(65-control)*.002+(inZone?.22:0)-(stuff-60)*.001,.05,.95);
+    const quality=clamp(Math.random()*.58+(65-control)*.002+(inZone?0.22:0)-(stuff-60)*.001,.05,.95);
     if(quality>.63){startHitBall(quality,true)}
     else{strikes++;setResult("타자가 헛스윙했습니다.");if(strikes>=3){strikeouts++;if(half==="top")userStrikeouts++;atBatResult="삼진";resetCount();finishAtBat(true)}else nextPitch()}
   };
