@@ -179,17 +179,23 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     if(phase==="intro"){controls.innerHTML='<div class="diamond-wait">선수단 입장 및 라인업 소개가 진행 중입니다.</div>';return}
     if(phase==="auto"){controls.innerHTML='<div class="diamond-wait">팀의 다른 타석을 진행하고 있습니다.</div>';return}
     if(phase==="ready"&&activeControl==="bat"){
+      hint.textContent="SPACE 스윙 · B 번트 · W/A/S/D 구종·코스 예측 · 1/2/3 도루";
       controls.innerHTML='<div class="diamond-batter-controls"><div class="diamond-guess"><small>구종·코스 예측</small><div class="diamond-guess-pad"><button data-guess="high">↑</button><button data-guess="inside">←</button><button data-guess="low">↓</button><button data-guess="outside">→</button></div><span id="diamond-guess-label">예측 없음</span></div><div class="diamond-swing-area"><button class="diamond-swing" data-control="swing">SWING</button><button class="diamond-secondary" data-control="bunt">번트</button></div><div class="diamond-runner-controls"><small>주루 작전</small><button data-steal="1">1루 도루</button><button data-steal="2">2루 도루</button><button data-steal="3">3루 도루</button></div></div>';
     }else if(phase==="pitch-flight"&&activeControl==="bat"){
+      hint.textContent="공이 타격 구간에 들어올 때 스윙하세요. 타이밍과 공의 위치가 타구에 영향을 줍니다.";
       controls.innerHTML='<div class="diamond-batter-controls"><div class="diamond-guess"><small>공을 확인하세요</small><span>투구 궤적을 읽고 타이밍을 맞추세요.</span></div><div class="diamond-swing-area"><button class="diamond-swing" data-control="swing">SWING</button><button class="diamond-secondary" data-control="bunt">번트</button></div><div class="diamond-runner-controls"><small>주루 작전</small><button data-steal="1">1루 도루</button><button data-steal="2">2루 도루</button><button data-steal="3">3루 도루</button></div></div>';
     }else if(phase==="ready"&&activeControl==="pitch"){
+      hint.textContent="SPACE 투구 · W/E/A/Z/X 구종 · 방향키/스트라이크 존 코스 · S 포수 리드 · B 고의사구 · 1/2/3 견제";
       controls.innerHTML='<div class="diamond-pitch-controls"><div class="diamond-pitch-select"><small>구종 선택</small>'+Object.entries(PITCHES).map(([key,p])=>'<button data-pitch="'+key+'" class="'+(selectedPitch===key?"selected":"")+'">'+p.label+'</button>').join("")+'</div><div class="diamond-pitch-zone-wrap"><small>투구 위치 지정 · 드래그</small><div class="diamond-pitch-zone" id="diamond-aim-zone"><div class="diamond-zone-target" id="diamond-zone-target"></div></div><span id="diamond-aim-label">가운데</span></div><div class="diamond-pitch-actions"><button class="diamond-primary" data-control="pitch">투구</button><button class="diamond-secondary" data-control="lead">포수 리드: '+({center:"중앙",inside:"몸쪽",outside:"바깥쪽"}[catcherLead])+'</button><button class="diamond-secondary" data-control="intentional">고의사구</button><div class="diamond-pickoff"><button data-pickoff="first">1루 견제</button><button data-pickoff="second">2루 견제</button><button data-pickoff="third">3루 견제</button></div></div></div>';
       positionAimMarker();
     }else if(phase==="fielding"&&!manualFielding){
+      hint.textContent="상대 수비가 자동으로 타구를 처리합니다.";
       controls.innerHTML='<div class="diamond-wait">수비수가 타구를 쫓고 있습니다. 타구 방향과 결과를 확인하세요.</div>';
     }else if(phase==="fielding"){
+      hint.textContent="WASD/방향키 수비수 이동 · SPACE 포구 · 1/2/3/4 베이스 송구";
       controls.innerHTML='<div class="diamond-field-controls"><div class="diamond-move-pad"><button data-move="0,-1">↑</button><button data-move="-1,0">←</button><button data-move="1,0">→</button><button data-move="0,1">↓</button></div><div class="diamond-field-actions"><small>수비수 이동 · 공에 접근해 포구</small><button class="diamond-primary" data-control="catch">포구</button><div class="diamond-throw-grid"><button data-throw="first">1루 송구</button><button data-throw="second">2루 송구</button><button data-throw="third">3루 송구</button><button data-throw="home">홈 송구</button></div></div></div>';
     }else if(phase==="result"){
+      hint.textContent="플레이 결과를 확인하고 다음 타석으로 진행하세요.";
       controls.innerHTML='<div class="diamond-result-controls"><b>'+esc(atBatResult||"플레이 종료")+'</b><button class="diamond-primary" data-control="next">다음 플레이</button></div>';
     }else{
       controls.innerHTML='<div class="diamond-wait">경기 흐름을 확인하고 있습니다.</div>';
