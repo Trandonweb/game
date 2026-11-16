@@ -273,7 +273,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     if(!ball)return;
     phase="hit-flight";ballInPlay=true;playResolved=false;pitchClock=0;batterRunTimer=0;throwResult=null;battingPlayer.userData.running=true;battingPlayer.userData.targetPosition=BASE_POSITIONS.first.clone();battingPlayer.userData.targetPosition.y=0;clearTimeout(autoTimer);
     const x=ball.position.x,y=ball.position.y;
-    const sweet=quality>.72,launchAngle=sweet?(.38+quality*.52):(.08+quality*.18),speed=sweet?38+quality*15:20+quality*10;
+    const sweet=quality>.72,launchAngle=sweet?(.38+quality*.52):(.08+quality*.18),batterPower=fromAi?65:(batterStats?.power??65),powerFactor=.85+batterPower/400,speed=(sweet?38+quality*15:20+quality*10)*powerFactor;
     const direction=clamp((x*.42)+(aim.x*.18)+(Math.random()-.5)*.32,-.9,.9);
     ballVelocity.set(direction*speed*.42,Math.sin(launchAngle)*speed,-Math.cos(direction*.35)*speed);
     ballSpin=quality*8;
@@ -303,7 +303,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
       else nextPitch();
       return;
     }
-    const quality=clamp(Math.random()*.58+(control-50)*.002+(inZone?.22:0),.05,.95);
+    const quality=clamp(Math.random()*.58+(65-control)*.002+(inZone?.22:0)-(stuff-60)*.001,.05,.95);
     if(quality>.63){startHitBall(quality,true)}
     else{strikes++;setResult("타자가 헛스윙했습니다.");if(strikes>=3){strikeouts++;if(half==="top")userStrikeouts++;atBatResult="삼진";resetCount();finishAtBat(true)}else nextPitch()}
   };
