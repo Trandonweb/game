@@ -218,7 +218,6 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     const direction=clamp((x*.42)+(aim.x*.18)+(Math.random()-.5)*.32,-.9,.9);
     ballVelocity.set(direction*speed*.42,Math.sin(launchAngle)*speed,-Math.cos(direction*.35)*speed);
     ballSpin=quality*8;
-    if(!fromAi)hits+=quality>.35?1:0;
     setResult(quality>.82?"완벽한 타구! 외야로 뻗어갑니다.":quality>.58?"정타! 타구가 필드로 향합니다.":"빗맞은 타구! 수비가 처리합니다.");
     phaseLabel.textContent="BALL IN PLAY";
     battingPlayer.userData.batPivot.rotation.z=-1.8;
@@ -232,7 +231,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     swingClock=.01;swingPressed=true;
     const hit=contactQuality(),contact=hit.quality>.42;
     if(contact){
-      atBatResult=hit.grade+" 타구";startHitBall(hit.quality);
+      atBatResult=(bunt?"번트":hit.grade)+" 타구";startHitBall(bunt?Math.min(.56,hit.quality):hit.quality);
     }else{
       strikes++;atBatResult="헛스윙";setResult("헛스윙! 스트라이크 "+strikes+"개.");phase="miss-flight";ballVelocity.set(0,0,0);
       if(strikes>=3){strikeouts++;atBatResult="삼진 아웃";resetCount();finishAtBat(true)}else nextPitch();
@@ -255,7 +254,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     }
     const quality=clamp(Math.random()*.58+(control-50)*.002+(inZone?.22:0),.05,.95);
     if(quality>.63){startHitBall(quality,true)}
-    else{strikes++;setResult("타자가 헛스윙했습니다.");if(strikes>=3){outs++;strikeouts++;atBatResult="삼진";resetCount();finishAtBat(true)}else nextPitch()}
+    else{strikes++;setResult("타자가 헛스윙했습니다.");if(strikes>=3){strikeouts++;atBatResult="삼진";resetCount();finishAtBat(true)}else nextPitch()}
   };
   const addBatterToBase=()=>{
     const next=[false,false,false];let scored=0;
@@ -305,6 +304,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     else if(fieldingResult==="ground"){atBatResult="안타";advanceBatter(ball.position.z< -42?2:1);setResult(ball.position.z< -42?"장타! 2루타!":"안타! 주자가 진루합니다.");}
     else{fieldingResult="ground";atBatResult="안타";advanceBatter(ball.position.z< -42?2:1);setResult("야수가 타구를 처리하지 못했습니다. 주자가 진루합니다.");}
     clearBall();phase="result";renderControls();updateMatch();
+    if(outs>=3){finishHalf();return}
     if(activeControl==="bat"&&!isTeamControl){runAutoRemaining();}
   };
   const moveFielder=(dx,dz)=>{
@@ -456,7 +456,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     if(phase==="ready"&&activeControl==="bat"&&pitchClock>1.8)throwCpuPitch();
     if(phase==="pitch-flight"){
       if(ball){ball.position.addScaledVector(ballVelocity,dt);ballVelocity.y-=9.81*dt;ballVelocity.x+=Math.sin(pitchClock*ballSpin)*.04;pitchClock+=dt;
-        if(activeControl==="bat"&&ball.position.z>19.8){const inZone=ball.position.x>-.95&&ball.position.x<.95&&ball.position.y>1.2&&ball.position.y<3.7;if(inZone){strikes++;setResult("스트라이크! 타자가 공을 지켜봤습니다.")}else{balls++;setResult("볼! 공을 골랐습니다.")};if(strikes>=3){outs++;strikeouts++;atBatResult="루킹 삼진";resetCount();finishAtBat(true)}else if(balls>=4){addBatterToBase();atBatResult="볼넷";resetCount();finishAtBat(false)}else nextPitch()}
+        if(activeControl==="bat"&&ball.position.z>19.8){const inZone=ball.position.x>-.95&&ball.position.x<.95&&ball.position.y>1.2&&ball.position.y<3.7;if(inZone){strikes++;setResult("스트라이크! 타자가 공을 지켜봤습니다.")}else{balls++;setResult("볼! 공을 골랐습니다.")};if(strikes>=3){strikeouts++;atBatResult="루킹 삼진";resetCount();finishAtBat(true)}else if(balls>=4){addBatterToBase();atBatResult="볼넷";resetCount();finishAtBat(false)}else nextPitch()}
         else if(activeControl==="pitch"&&ball.position.z>19.8){pitchResultForAi()}
         if(ball&&ball.position.y<.12&&ball.position.z>17){ball.position.y=.12;ballVelocity.set(0,0,0)}
       }
