@@ -175,6 +175,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   };
   const updateCount=()=>{countText.textContent="B "+balls+"　S "+strikes+"　O "+outs};
   const renderControls=()=>{
+    if(paused){controls.innerHTML='<div class="diamond-result-controls"><b>타임아웃 · 일시 정지</b><button class="diamond-primary" data-control="resume">경기 계속하기</button></div>';return}
     if(finished){controls.innerHTML='<div class="diamond-finished"><b>경기가 종료되었습니다.</b><button class="diamond-primary" data-control="finish">경기 결과 반영</button></div>';return}
     if(phase==="intro"){controls.innerHTML='<div class="diamond-wait">선수단 입장 및 라인업 소개가 진행 중입니다.</div>';return}
     if(phase==="auto"){controls.innerHTML='<div class="diamond-wait">팀의 다른 타석을 진행하고 있습니다.</div>';return}
@@ -420,6 +421,8 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const onKey=e=>{
     if(disposed||finished)return;
     const key=e.key.toLowerCase();
+    if(key==="escape"&&phase!=="auto"){paused=!paused;if(paused)setResult("타임아웃 · 일시 정지");else setResult("경기를 재개합니다.");renderControls();return}
+    if(paused)return;
     if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(key))e.preventDefault();
     if(phase==="fielding"){
       if(key===" "||key==="enter")catchBall();
@@ -484,6 +487,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
       case"catch":catchBall();break;
       case"next":if(outs>=3)finishHalf();else if(activeControl==="bat")startBattingTurn();else startPitchingTurn();break;
       case"finish":onFinish?.(match);break;
+      case"resume":paused=false;setResult("경기를 재개합니다.");renderControls();updateMatch();break;
     }
   };
   const onAimPointer=e=>{
@@ -548,7 +552,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   controls.addEventListener("pointerdown",onAimPointer);controls.addEventListener("pointermove",onAimMove);controls.addEventListener("pointerup",onAimUp);controls.addEventListener("pointercancel",onAimUp);canvas.addEventListener("pointerdown",onCanvasTap);window.addEventListener("keydown",onKey);
 
   const animate=()=>{
-    if(disposed)return;raf=requestAnimationFrame(animate);const now=performance.now(),dt=Math.min((now-last)/1000,.04);last=now;clock+=dt;
+    if(disposed)return;raf=requestAnimationFrame(animate);const now=performance.now(),dt=Math.min((now-last)/1000,.04);last=now;if(paused){renderer.render(scene,camera);return}clock+=dt;
     if(phase==="intro"){
       introClock+=dt;camera.position.lerp(new THREE.Vector3(Math.sin(introClock*.17)*95,52+Math.sin(introClock*.45)*4,Math.cos(introClock*.17)*100),.018);camera.lookAt(0,2,-10);
       players.forEach(p=>animatePlayer(p,dt,now));
