@@ -95,7 +95,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
       hits++;const homer=launch>.58&&Math.abs(ballVelocity.x)<8;if(homer){homeRuns++;scoreRuns++;setResult("ホーム런! 타구가 담장을 넘어갑니다!")}else setResult("정타! 타구가 외야로 뻗어갑니다.");
       
     }else{
-      strikes++;phase="miss-flight";ballVelocity.set((Math.random()-.5)*1.5,1,12);setResult(timing<.32?"파울 또는 빗맞은 타구":"헛스윙! 타이밍이 늦었습니다.");
+      strikes++;if(strikes>=3){outs++;strikeouts++;strikes=0;balls=0;setResult("헛스윙 삼진! 다음 타자로 넘어갑니다.")}else setResult(timing<.32?"파울 또는 빗맞은 타구":"헛스윙! 타이밍이 늦었습니다.");phase="miss-flight";ballVelocity.set((Math.random()-.5)*1.5,1,12);
     }
     updateMatch();swingWindow=0;
   };
@@ -141,7 +141,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     if(phase==="pitch-flight"||phase==="miss-flight"||phase==="hit-flight"||phase==="fielding"){
       if(ball){ball.position.addScaledVector(ballVelocity,dt);ballVelocity.y-=9.8*dt;if(ball.position.y<.2){ball.position.y=.2;ballVelocity.y*=-.32;if(Math.abs(ballVelocity.y)<1)ballVelocity.y=0}
         pitchClock+=dt;
-        if((phase==="pitch-flight"||phase==="miss-flight")&&ball.position.z>26){if(phase==="pitch-flight"){if(mode==="pitch"){const outside=Math.abs(ball.position.x)>1.5||ball.position.y<1.1||ball.position.y>3.4;if(outside){balls++;setResult("볼! 코스가 벗어났습니다.")}else if(Math.random()<.24){outs++;strikeouts++;strikes=0;balls=0;setResult("삼진! 타자를 돌려세웠습니다.")}else{setResult("타구 발생! 수비로 전환합니다.");ballVelocity.set((Math.random()-.5)*13,8,-25);beginFielding()}}else{strikes++;setResult("스트라이크!");if(strikes>=3){outs++;strikeouts++;strikes=0;balls=0;setResult("삼진! 타자를 돌려세웠습니다.")}}}if(phase!=="fielding")nextPitch()}
+        if((phase==="pitch-flight"||phase==="miss-flight")&&ball.position.z>26){if(phase==="pitch-flight"){if(mode==="pitch"){const outside=Math.abs(ball.position.x)>1.5||ball.position.y<1.1||ball.position.y>3.4;if(outside){balls++;setResult("볼! 코스가 벗어났습니다.");if(balls>=4){balls=0;strikes=0;setResult("볼넷을 허용했습니다.")}}else if(Math.random()<.24){outs++;strikeouts++;strikes=0;balls=0;setResult("삼진! 타자를 돌려세웠습니다.")}else{setResult("타구 발생! 수비로 전환합니다.");ballVelocity.set((Math.random()-.5)*13,8,-25);beginFielding()}}else{strikes++;setResult("스트라이크!");if(strikes>=3){outs++;strikeouts++;strikes=0;balls=0;setResult("삼진! 타자를 돌려세웠습니다.")}}}if(phase!=="fielding")nextPitch()}
         else if(phase==="hit-flight"&&pitchClock>1.3){beginFielding()}
         else if(phase==="fielding"){const target=ball.position.clone();target.y=0;const dx=target.x-userFielder.position.x,dz=target.z-userFielder.position.z;userFielder.position.x+=clamp(dx,-1,1)*dt*8;userFielder.position.z+=clamp(dz,-1,1)*dt*8;if(ball.position.z>30||ball.position.z< -115||ball.position.x>100||ball.position.x< -100){finishAtBat()}}
       }
