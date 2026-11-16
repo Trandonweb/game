@@ -306,22 +306,39 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     }
     phase="result";renderControls();updateMatch();
   };
+  const simulateRemainingHalf=()=>{
+    let runs=0,appearances=0;
+    const advanceSimulatedRunners=steps=>{
+      if(steps>=4){runs+=runnerTokens.filter(Boolean).length+1;runnerTokens=[null,null,null];bases=[false,false,false];return}
+      const next=[null,null,null];
+      runnerTokens.forEach((token,index)=>{if(!token)return;const destination=index+steps;if(destination>=3)runs++;else next[destination]=token});
+      next[steps-1]="runner-"+nextRunnerId++;runnerTokens=next;bases=next.map(Boolean);
+    };
+    const simulateWalk=()=>{
+      const next=runnerTokens.slice();
+      if(next[0]){if(next[1]){if(next[2])runs++;next[2]=next[1]}next[1]=next[0]}
+      next[0]="runner-"+nextRunnerId++;runnerTokens=next;bases=next.map(Boolean);
+    };
+    while(outs<3&&appearances<18){
+      appearances++;const roll=Math.random();
+      if(roll<.64){outs++;if(outs<3&&runnerTokens.some(Boolean)&&Math.random()<.09){outs++;const occupied=runnerTokens.findIndex(Boolean);if(occupied>=0)runnerTokens[occupied]=null;bases=runnerTokens.map(Boolean)}}
+      else if(roll<.73)simulateWalk();
+      else if(roll<.91)advanceSimulatedRunners(1);
+      else if(roll<.97)advanceSimulatedRunners(2);
+      else if(roll<.985)advanceSimulatedRunners(3);
+      else advanceSimulatedRunners(4);
+    }
+    if(half==="top")opponentRuns+=runs;else scoreRuns+=runs;
+    outs=3;finishHalf();
+  };
   const runAutoRemaining=()=>{
     phase="auto";phaseLabel.textContent="INNING SIMULATION";setResult("팀의 나머지 타석을 진행하고 있습니다.");renderControls();
-    autoTimer=window.setTimeout(()=>{
-      if(disposed)return;
-      const remaining=Math.max(0,3-outs);const runs=Math.random()<.28?1:Math.random()<.12?2:0;scoreRuns+=runs;outs=3;finishHalf();
-    },1200);
+    autoTimer=window.setTimeout(()=>{if(!disposed)simulateRemainingHalf()},1200);
   };
   const runAutoHalf=()=>{
     if(finished||disposed)return;
     phase="auto";phaseLabel.textContent="AUTO PLAY";setResult("팀의 공격/수비가 자동으로 진행됩니다.");renderControls();
-    autoTimer=window.setTimeout(()=>{
-      if(disposed)return;
-      const runs=Math.floor(Math.random()*3);
-      if(half==="top")opponentRuns+=runs;else scoreRuns+=runs;
-      outs=3;finishHalf();
-    },1250);
+    autoTimer=window.setTimeout(()=>{if(!disposed)simulateRemainingHalf()},1250);
   };
   const finishHalf=()=>{
     phase="result";clearBall();outs=0;balls=0;strikes=0;bases=[false,false,false];runnerTokens=[null,null,null];userAtBatDone=false;
