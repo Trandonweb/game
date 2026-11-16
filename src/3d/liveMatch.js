@@ -390,7 +390,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     if(phase!=="fielding"||!ball||!activeFielder)return;
     if(fieldingResult!=="caught"&&fieldingResult!=="ground")return setResult("먼저 타구를 처리해야 합니다.");
     throwTarget=BASE_POSITIONS[base];throwClock=0;
-    const baseIndex={first:0,second:1,third:2,home:3}[base],occupied=base==="first"||base==="home"?true:!!bases[baseIndex];
+    const baseIndex={first:0,second:1,third:2,home:3}[base],occupied=base==="first"?true:base==="home"?!!bases[2]:!!bases[baseIndex];
     const runnerSpeed=8.5+((half==="bottom"?(batterStats?.speed??65):65)*.035),firstBaseTime=17.4/runnerSpeed,targetTime=base==="first"?firstBaseTime:1.05+baseIndex*.62,throwTravel=ball.position.distanceTo(throwTarget)/54;
     throwResult=fieldingResult==="caught"||occupied&&batterRunTimer+throwTravel<targetTime?"out":"safe";
     ballVelocity.copy(throwTarget.clone().sub(ball.position).normalize().multiplyScalar(54));
@@ -557,12 +557,11 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
       }
     }
     if(phase==="hit-flight"||phase==="fielding"||phase==="throw-flight"){
-      batterRunTimer+=dt;
+      batterRunTimer+=dt;pitchClock+=dt;
       if(ball){
         ball.position.addScaledVector(ballVelocity,dt);ballVelocity.y-=9.81*dt;ball.rotation.x+=dt*ballSpin;ball.rotation.z+=dt*ballSpin*.7;
         if(phase==="hit-flight"&&pitchClock>0.18){phase="fielding";phaseLabel.textContent="FIELDING";renderControls()}
         if(phase==="fielding"){
-          pitchClock+=dt;
           if(activeFielder&&!manualFielding){const target=ball.position.clone();target.y=0;const delta=target.sub(activeFielder.position);const distance=delta.length();if(distance>0.01)activeFielder.position.add(delta.normalize().multiplyScalar(Math.min(distance,dt*18)));const horizontal=Math.hypot(activeFielder.position.x-ball.position.x,activeFielder.position.z-ball.position.z);if(horizontal<2.7&&ball.position.y<6&&ballVelocity.y<0){fieldingResult="caught";ball.position.copy(activeFielder.position).add(new THREE.Vector3(0,1,0));ballVelocity.set(0,0,0);resolveHitPlay()}}
           if(ball&&phase==="fielding"&&ball.position.y<=.22&&ballVelocity.y<0){ball.position.y=.22;ballVelocity.y=Math.abs(ballVelocity.y)*.27;ballVelocity.multiplyScalar(.78);if(ballVelocity.length()<2){fieldingResult="ground";resolveHitPlay()}}
           if(ball&&phase==="fielding"){const fence=getFenceStatus(ball.position,team.fence);if(fence.over){fieldingResult="homer";resolveHitPlay()}else if(fence.wall){fieldingResult="wall";resolveHitPlay()}else if(ball.position.x>105||ball.position.x< -105){fieldingResult="ground";resolveHitPlay()}}
