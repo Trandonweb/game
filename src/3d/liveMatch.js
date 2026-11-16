@@ -510,9 +510,9 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
         if(phase==="fielding"){
           pitchClock+=dt;
           if(activeFielder&&!manualFielding){const target=ball.position.clone();target.y=0;const delta=target.sub(activeFielder.position);const distance=delta.length();if(distance>0.01)activeFielder.position.add(delta.normalize().multiplyScalar(Math.min(distance,dt*18)));const horizontal=Math.hypot(activeFielder.position.x-ball.position.x,activeFielder.position.z-ball.position.z);if(horizontal<2.7&&ball.position.y<6&&ballVelocity.y<0){fieldingResult="caught";ball.position.copy(activeFielder.position).add(new THREE.Vector3(0,1,0));ballVelocity.set(0,0,0);resolveHitPlay()}}
-          if(ball.position.y<=.22&&ballVelocity.y<0){ball.position.y=.22;ballVelocity.y=Math.abs(ballVelocity.y)*.27;ballVelocity.multiplyScalar(.78);if(ballVelocity.length()<2){fieldingResult="ground";resolveHitPlay()}}
-          if(ball.position.z< -92||ball.position.x>105||ball.position.x< -105){if(ball.position.y>5){atBatResult="홈런";fieldingResult="ground"}else if(!fieldingResult)fieldingResult="ground";resolveHitPlay()}
-          if(pitchClock>7&&!playResolved){fieldingResult="ground";resolveHitPlay()}
+          if(ball&&phase==="fielding"&&ball.position.y<=.22&&ballVelocity.y<0){ball.position.y=.22;ballVelocity.y=Math.abs(ballVelocity.y)*.27;ballVelocity.multiplyScalar(.78);if(ballVelocity.length()<2){fieldingResult="ground";resolveHitPlay()}}
+          if(ball&&phase==="fielding"&&(ball.position.z< -92||ball.position.x>105||ball.position.x< -105)){if(ball.position.y>5){atBatResult="홈런";fieldingResult="ground"}else if(!fieldingResult)fieldingResult="ground";resolveHitPlay()}
+          if(ball&&phase==="fielding"&&pitchClock>7&&!playResolved){fieldingResult="ground";resolveHitPlay()}
         }
         if(phase==="throw-flight"){
           throwClock+=dt;
