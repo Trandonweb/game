@@ -179,7 +179,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const renderControls=()=>{
     if(pausedState.value){controls.innerHTML='<div class="diamond-result-controls"><b>타임아웃 · 일시 정지</b><button class="diamond-primary" data-control="resume">경기 계속하기</button></div>';return}
     if(finished){controls.innerHTML='<div class="diamond-finished"><b>경기가 종료되었습니다.</b><button class="diamond-primary" data-control="finish">경기 결과 반영</button></div>';return}
-    if(phase==="intro"){controls.innerHTML='<div class="diamond-wait">선수단 입장 및 라인업 소개가 진행 중입니다.</div>';return}
+    if(phase==="intro"){controls.innerHTML='<div class="diamond-wait">경기 시작 · 선발 라인업</div>';return}
     if(phase==="auto"){controls.innerHTML='<div class="diamond-wait">팀의 다른 타석을 진행하고 있습니다.</div>';return}
     if(phase==="ready"&&activeControl==="bat"){
       hint.textContent="SPACE 스윙 · B 번트 · W/A/S/D 구종·코스 예측 · 1/2/3 도루";
@@ -213,7 +213,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const animatePlayer=(model,dt,now)=>{
     if(!model)return;const u=model.userData;u.walkPhase+=dt*3.5;
     if((u.kind==="runner"||(model===battingPlayer&&u.running))&&model.visible&&u.targetPosition){const delta=u.targetPosition.clone().sub(model.position),distance=delta.length();if(distance>.18){const direction=delta.normalize();const runSpeed=8.5+((model===battingPlayer?(half==="bottom"?(batterStats?.speed??65):65):65)*.035);model.position.add(direction.multiplyScalar(Math.min(distance,dt*runSpeed)));model.rotation.y=Math.atan2(direction.x,-direction.z);u.legs[0].rotation.x=Math.sin(now*.014)*.48;u.legs[1].rotation.x=-Math.sin(now*.014)*.48;}else{if(u.kind==="batter")u.running=false;u.legs[0].rotation.x=lerp(u.legs[0].rotation.x,0,dt*5);u.legs[1].rotation.x=lerp(u.legs[1].rotation.x,0,dt*5)}}
-    if(phase==="intro"){u.legs[0].rotation.x=Math.sin(now*.004+u.walkPhase)*.22;u.legs[1].rotation.x=-Math.sin(now*.004+u.walkPhase)*.22;u.arms[0].shoulder.rotation.x=-u.legs[0].rotation.x*.6;u.arms[1].shoulder.rotation.x=-u.legs[1].rotation.x*.6}
+    if(phase==="intro"){u.legs[0].rotation.x=0;u.legs[1].rotation.x=0}
     else if(u.kind!=="runner"&&!(u.kind==="batter"&&u.running)){u.legs.forEach(l=>l.rotation.x=lerp(l.rotation.x,0,dt*6));u.arms.forEach(a=>{a.shoulder.rotation.x=lerp(a.shoulder.rotation.x,0,dt*5);a.elbow.rotation.x=lerp(a.elbow.rotation.x,0,dt*5)})}
     if(model===pitchingPlayer&&phase==="pitch-flight"){u.arms[1].shoulder.rotation.x=Math.sin(pitchClock*11)*.75;u.torso.rotation.z=Math.sin(pitchClock*8)*.06}
     if(model===battingPlayer&&swingClock>0){const t=clamp(swingClock/.28,0,1),arc=Math.sin(t*Math.PI);u.batPivot.rotation.x=lerp(-.25,pendingBunt?-.78:-1.25,arc);u.batPivot.rotation.z=lerp(-.15,pendingBunt?-.42:-.95,arc);u.arms[0].shoulder.rotation.x=-.75*arc;u.arms[1].shoulder.rotation.x=-.55*arc}
@@ -553,7 +553,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const beginLivePlay=()=>{
     intro?.classList.add("hidden");setPhaseMode();
   };
-  const onSkip=()=>{introClock=8;beginLivePlay()};
+  const onSkip=()=>{introClock=2.5;beginLivePlay()};
   const onBench=()=>toggleBench();
   const onCamera=()=>{benchView=false;const next=viewMode==="broadcast"?(phase==="fielding"?"field":activeControl==="pitch"?"pitcher":"batter"):"broadcast";setCamera(next);host.querySelector("#diamond-camera").textContent=next==="broadcast"?"타석 시점":"중계 시점"};
   const onExit=()=>{if(window.confirm("현재 경기를 종료하고 커리어 화면으로 돌아갈까요?"))onFinish?.(match)};
@@ -565,7 +565,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     if(phase==="intro"){
       introClock+=dt;camera.position.lerp(new THREE.Vector3(Math.sin(introClock*.17)*95,52+Math.sin(introClock*.45)*4,Math.cos(introClock*.17)*100),.018);camera.lookAt(0,2,-10);
       players.forEach(p=>animatePlayer(p,dt,now));
-      if(introClock>7)beginLivePlay();
+      if(introClock>2.4)beginLivePlay();
     }
     if(phase==="ready"&&activeControl==="bat"&&pitchClock>1.8)throwCpuPitch();
     if(phase==="pitch-flight"){
