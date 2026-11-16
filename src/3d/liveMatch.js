@@ -74,7 +74,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
   const renderControls=()=>{
     if(phase==="intro"){controls.innerHTML='<span>경기 전 선수 소개와 입장 연출이 진행 중입니다.</span><button class="btn" id="skip-intro">입장 연출 건너뛰기</button>';return}
     if(mode==="bat")controls.innerHTML='<span>투구를 기다리세요. 스페이스 / 클릭: 스윙</span><button class="btn btn-primary" id="swing-button">스윙</button><button class="btn" id="take-button">지켜보기</button>';
-    else if(mode==="pitch")controls.innerHTML='<span>구종·코스를 선택하고 투구하세요.</span><button class="btn" data-pitch="fastball">직구</button><button class="btn" data-pitch="slider">슬라이더</button><button class="btn" data-pitch="curve">커브</button><button class="btn" data-aim="inside">몸쪽</button><button class="btn" data-aim="center">가운데</button><button class="btn" data-aim="outside">바깥쪽</button><button class="btn btn-primary" id="throw-button">투구</button>';
+    else if(mode==="pitch")controls.innerHTML='<span>구종·코스를 선택하고 투구하세요.</span><button class="btn" data-pitch="fastball">직구</button><button class="btn" data-pitch="slider">슬라이더</button><button class="btn" data-pitch="curve">커브</button><button class="btn" data-aim="inside">몸쪽</button><button class="btn" data-aim="center">가운데</button><button class="btn" data-aim="outside">바깥쪽</button><button class="btn" data-aim="high">높게</button><button class="btn" data-aim="low">낮게</button><button class="btn btn-primary" id="throw-button">투구</button>';
     else if(mode==="field")controls.innerHTML='<span>WASD / 방향키 또는 아래 버튼으로 이동</span><button class="btn" data-move="0,-1">↑</button><button class="btn" data-move="-1,0">←</button><button class="btn" data-move="1,0">→</button><button class="btn" data-move="0,1">↓</button><button class="btn btn-primary" id="catch-button">포구</button><button class="btn" id="throw-base">1루 송구</button>';
     else controls.innerHTML='<span>벤치 관전 모드 · 카메라가 경기 흐름을 따라갑니다.</span><button class="btn" id="resume-play">플레이로 복귀</button>';
   };
@@ -148,7 +148,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     }
     if(mode==="bench"&&phase!=="intro"){camera.position.lerp(new THREE.Vector3(42,15,34),.025);camera.lookAt(0,3,-12)}
     if(pitcher?.userData.arms?.[1])pitcher.userData.arms[1].pivot.rotation.x=Math.sin(now*.006)*.35;
-    if(batter?.userData.arms?.[0]&&phase==="hit-flight")batter.userData.arms[0].pivot.rotation.x=-1.2;
+    if(batter?.userData.arms?.[0])batter.userData.arms[0].pivot.rotation.x=phase==="hit-flight"?-1.2:Math.sin(now*.002)*.025;
     renderer.render(scene,camera);
   };
   const onFinishClick=()=>{finished=true;phase="finished";match.finished=true;updateMatch();onFinish?.(match)};
