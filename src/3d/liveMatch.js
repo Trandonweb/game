@@ -342,7 +342,12 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
     if(disposed||finished)return;
     const key=e.key.toLowerCase();
     if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(key))e.preventDefault();
-    if(activeControl==="bat"){
+    if(phase==="fielding"){
+      if(key===" "||key==="enter")catchBall();
+      if(key==="arrowup"||key==="w")moveFielder(0,-1);if(key==="arrowdown"||key==="s")moveFielder(0,1);
+      if(key==="arrowleft"||key==="a")moveFielder(-1,0);if(key==="arrowright"||key==="d")moveFielder(1,0);
+      if(key==="1")throwToBase("first");if(key==="2")throwToBase("second");if(key==="3")throwToBase("third");if(key==="4")throwToBase("home");
+    }else if(activeControl==="bat"){
       if(key===" "||key==="enter")swing(false);
       if(key==="b")swing(true);
       if(key==="w")setGuess("high");if(key==="a")setGuess("inside");if(key==="s")setGuess("low");if(key==="d")setGuess("outside");
@@ -352,11 +357,6 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish){
       if(key==="w")selectedPitch="curve";if(key==="e")selectedPitch="fastball";if(key==="a")selectedPitch="slider";if(key==="s")selectedPitch="changeup";if(key==="z")selectedPitch="sinker";
       if(["1","2","3"].includes(key))pickoff(["first","second","third"][Number(key)-1]);
       renderControls();
-    }else if(phase==="fielding"){
-      if(key===" "||key==="enter")catchBall();
-      if(key==="arrowup"||key==="w")moveFielder(0,-1);if(key==="arrowdown"||key==="s")moveFielder(0,1);
-      if(key==="arrowleft"||key==="a")moveFielder(-1,0);if(key==="arrowright"||key==="d")moveFielder(1,0);
-      if(key==="1")throwToBase("first");if(key==="2")throwToBase("second");if(key==="3")throwToBase("third");if(key==="4")throwToBase("home");
     }
   };
   function setGuess(value){
