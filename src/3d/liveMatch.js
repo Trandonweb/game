@@ -394,12 +394,12 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const catchBall=()=>{
     if(phase!=="fielding"||!ball||!activeFielder)return;
     const distance=activeFielder.position.distanceTo(ball.position);
-    if(distance<4.3&&ball.position.y<8){fieldingResult="caught";ball.position.copy(activeFielder.position).add(new THREE.Vector3(0,1,0));ballVelocity.set(0,0,0);setResult("포구 성공! 송구할 베이스를 선택하세요.");}
+    if(distance<4.3&&ball.position.y<8){fieldingResult=ball.position.y<=.65?"ground-caught":"caught";ball.position.copy(activeFielder.position).add(new THREE.Vector3(0,1,0));ballVelocity.set(0,0,0);setResult("포구 성공! 송구할 베이스를 선택하세요.");}
     else setResult("공과 거리가 있습니다. 수비수를 더 이동하세요.");
   };
   const throwToBase=base=>{
     if(phase!=="fielding"||!ball||!activeFielder)return;
-    if(fieldingResult!=="caught")return setResult("먼저 수비수를 공 가까이 이동시켜 포구하세요.");
+    if(fieldingResult!=="caught"&&fieldingResult!=="ground-caught")return setResult("먼저 수비수를 공 가까이 이동시켜 포구하세요.");
     throwTarget=BASE_POSITIONS[base];throwClock=0;
     const baseIndex={first:0,second:1,third:2,home:3}[base],occupied=base==="first"?true:base==="home"?!!bases[2]:!!bases[baseIndex];
     const runnerSpeed=8.5+((half==="bottom"?(batterStats?.speed??65):65)*.035),firstBaseTime=17.4/runnerSpeed,targetTime=base==="first"?firstBaseTime:1.05+baseIndex*.62,throwTravel=ball.position.distanceTo(throwTarget)/54;
