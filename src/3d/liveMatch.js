@@ -313,10 +313,12 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const finishHalf=()=>{
     phase="result";clearBall();outs=0;balls=0;strikes=0;bases=[false,false,false];userAtBatDone=false;
     if(half==="top"){half="bottom";setResult("공수 교대! "+inning+"회 말 공격입니다.");}
-    else{half="top";inning++;setResult(inning>9?"정규 이닝 종료":"이닝 종료! "+inning+"회 초 수비입니다.");}
-    updateSides();
-    if(inning>(match.inningsLimit||9)){finished=true;phase="finished";phaseLabel.textContent="FINAL";setResult(scoreRuns===opponentRuns?"경기 종료 · 무승부":scoreRuns>opponentRuns?"경기 종료 · 승리!":"경기 종료 · 패배");renderControls();updateMatch();return}
-    updateMatch();setPhaseMode();
+    else if(inning>=(match.inningsLimit||9)){
+      finished=true;phase="finished";phaseLabel.textContent="FINAL";
+      setResult(scoreRuns===opponentRuns?"경기 종료 · 무승부":scoreRuns>opponentRuns?"경기 종료 · 승리!":"경기 종료 · 패배");
+      renderControls();updateMatch();return;
+    }else{half="top";inning++;setResult("이닝 종료! "+inning+"회 초 수비입니다.");}
+    updateSides();updateMatch();setPhaseMode();
   };
   const resolveHitPlay=()=>{
     if(playResolved||!ball)return;playResolved=true;
