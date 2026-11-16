@@ -219,8 +219,8 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     const target={x:intended.x+(Math.random()-.5)*spread,y:intended.y+(Math.random()-.5)*spread};
     pitchKind=type;pitchTarget=target;pitches++;pitchClock=0;speedText.textContent=Math.round(speed*3.6)+" km/h · "+data.label;phase="pitch-flight";ballInPlay=false;playResolved=false;
     const start=new THREE.Vector3(0,2.15,-1.4);makeBall(start);
-    const travel=21.2,seconds=travel/speed;
-    ballVelocity.set((target.x-start.x)/seconds+data.breakX*.18,(target.y-start.y)/seconds+4.9*seconds+data.breakY*.18,speed);
+    const travel=21.2,seconds=travel/speed,breakFactor=clamp((pitcherStats?.breaking??65)/65,.55,1.5);
+    ballVelocity.set((target.x-start.x)/seconds+data.breakX*.18*breakFactor,(target.y-start.y)/seconds+4.9*seconds+data.breakY*.18*breakFactor,speed);
     ballSpin=type==="curve"?2.8:type==="slider"?1.9:1.1;
     pitchingPlayer.userData.arms[1].shoulder.rotation.x=-1.1;
     setResult(isCpu?"투수가 "+data.label+"를 던졌습니다.":"투구! 타자의 반응을 확인하세요.");
@@ -234,7 +234,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     const timingScore=clamp(1-dist/3.8,0,1),locationScore=zone?clamp(1-Math.abs(ball.position.x)/1.9,0,1):.1;
     const skill=clamp(((batterStats?.contact??60)-45)/65,.25,1);
     const guess=match.guess,actual=pitchTarget.x<-.3?"inside":pitchTarget.x>.3?"outside":pitchTarget.y>3?"high":pitchTarget.y<1.9?"low":null;
-    const guessBonus=guess&&guess===actual?.07:0;
+    const guessBonus=(guess&&guess===actual)?0.07:0;
     const quality=clamp(timingScore*.67+locationScore*.2+skill*.13+guessBonus,0,1);
     const grade=quality>.83?"완벽":quality>.62?"좋음":quality>.42?"조금 빠름/늦음":"헛스윙";
     return {quality,grade,inZone:zone};
