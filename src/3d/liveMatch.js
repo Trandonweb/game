@@ -37,7 +37,7 @@ function makePlayer(teamColor="#315c82",number="7",kind="fielder"){
   const batGrip=addMesh(batPivot,new THREE.CylinderGeometry(.035,.04,.42,10),material("#765033"),[0,.2,0]);
   const batBarrel=addMesh(batPivot,new THREE.CylinderGeometry(.065,.115,.88,12),material("#c89a5e"),[0,.82,0]);
   batBarrel.rotation.z=-.035;
-  root.userData={torso,head,arms,legs,batPivot,kind,walkPhase:Math.random()*6,targetPosition:new THREE.Vector3(0,0,22)};
+  root.userData={torso,head,arms,legs,batPivot,kind,walkPhase:Math.random()*6,targetPosition:new THREE.Vector3(0,0,34)};
   return root;
 }
 
