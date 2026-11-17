@@ -199,7 +199,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
       controls.innerHTML='<div class="diamond-field-controls"><div class="diamond-move-pad"><button data-move="0,-1">↑</button><button data-move="-1,0">←</button><button data-move="1,0">→</button><button data-move="0,1">↓</button></div><div class="diamond-field-actions"><small>수비수 이동 · 공에 접근해 포구</small><button class="diamond-primary" data-control="catch">포구</button><div class="diamond-throw-grid"><button data-throw="first">1루 송구</button><button data-throw="second">2루 송구</button><button data-throw="third">3루 송구</button><button data-throw="home">홈 송구</button></div></div></div>';
     }else if(phase==="result"){
       hint.textContent="플레이 결과를 확인하고 다음 타석으로 진행하세요.";
-      controls.innerHTML='<div class="diamond-result-controls"><b>'+esc(atBatResult||"플레이 종료")+'</b><button class="diamond-primary" data-control="next">다음 플레이</button></div>';
+      controls.innerHTML='<div class="diamond-result-controls"><b>'+esc(atBatResult||"플레이 종료")+'</b><button class="diamond-primary" data-control="next">다음 타석</button></div>';
     }else{
       controls.innerHTML='<div class="diamond-wait">경기 흐름을 확인하고 있습니다.</div>';
     }
@@ -399,7 +399,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     if(phase!=="fielding"||!ball||!activeFielder)return;
     if(fieldingResult!=="caught"&&fieldingResult!=="ground-caught")return setResult("먼저 수비수를 공 가까이 이동시켜 포구하세요.");
     throwTarget=BASE_POSITIONS[base];throwClock=0;
-    const baseIndex={first:0,second:1,third:2,home:3}[base],occupied=base==="first"?true:base==="second"?!!bases[0]:base==="third"?!!bases[1]:!!bases[2];
+    const occupied=base==="first"?true:base==="second"?!!bases[0]:base==="third"?!!bases[1]:!!bases[2];
     const runnerSpeed=8.5+((half==="bottom"?(batterStats?.speed??65):65)*.035),baseRunTime=34.3/runnerSpeed,targetTime=baseRunTime,throwTravel=ball.position.distanceTo(throwTarget)/54;
     throwResult=fieldingResult==="caught"||occupied&&batterRunTimer+throwTravel<targetTime?"out":"safe";
     ballVelocity.copy(throwTarget.clone().sub(ball.position).normalize().multiplyScalar(54));
