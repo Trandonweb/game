@@ -47,7 +47,7 @@ function makePlayer(teamColor="#315c82",number="7",kind="fielder"){
   badgeCtx.fillStyle="#ffffff";badgeCtx.font="900 142px system-ui";badgeCtx.textAlign="center";badgeCtx.textBaseline="middle";badgeCtx.shadowColor="#0008";badgeCtx.shadowBlur=5;badgeCtx.fillText(String(number),128,132);
   const badgeTexture=new THREE.CanvasTexture(badgeCanvas);badgeTexture.colorSpace=THREE.SRGBColorSpace;
   const badge=addPart(root,new THREE.PlaneGeometry(.29,.31),new THREE.MeshBasicMaterial({map:badgeTexture,transparent:true,depthWrite:false}),[0,1.48,-.276]);
-  badge.rotation.y=0;
+  badge.rotation.y=Math.PI;
   const seamMat=material("#f2eee4",.7);
   for(const side of [-1,1]){
     const stripe=addPart(root,new THREE.BoxGeometry(.025,.56,.018),seamMat,[side*.255,.93,-.12]);
@@ -583,8 +583,8 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   };
   const init=()=>{
     const mobile=window.matchMedia("(max-width:700px)").matches;
-    renderer=new THREE.WebGLRenderer({canvas,antialias:!mobile,alpha:false,powerPreference:"high-performance"});
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1.15:1.4));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.06;
+    renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"high-performance"});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1.45:1.85));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.06;
     renderer.shadowMap.enabled=!mobile;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     scene=createGamePark(team);camera=new THREE.PerspectiveCamera(48,1,.1,650);
     const home=team.primary||"#315c82";
@@ -664,6 +664,21 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
         ball.position.addScaledVector(ballVelocity,dt);ballVelocity.y-=9.81*dt;ball.rotation.x+=dt*ballSpin;ball.rotation.z+=dt*ballSpin*.7;
         if(phase==="hit-flight"&&pitchClock>0.18){phase="fielding";phaseLabel.textContent="FIELDING";renderControls()}
         if(phase==="fielding"){
+          if(manualFielding&&fielders.length){
+            const aiFielder=fielders.filter(f=>f!==activeFielder).reduce((best,f)=>!best||f.position.distanceTo(ball.position)<best.position.distanceTo(ball.position)?f:best,null);
+            if(aiFielder){
+              const aiTarget=ball.position.clone();aiTarget.y=0;
+              const aiDelta=aiTarget.sub(aiFielder.position),aiDistance=aiDelta.length();
+              if(aiDistance<25&&aiDistance>.01){
+                const aiDirection=aiDelta.normalize();aiFielder.position.add(aiDirection.multiplyScalar(Math.min(aiDistance,dt*13)));
+                aiFielder.rotation.y=Math.atan2(aiDirection.x,-aiDirection.z);
+              }
+              const aiHorizontal=Math.hypot(aiFielder.position.x-ball.position.x,aiFielder.position.z-ball.position.z);
+              if(aiHorizontal<2.55&&ball.position.y<5.5&&ballVelocity.y<0){
+                fieldingResult="caught";ball.position.copy(aiFielder.position).add(new THREE.Vector3(0,1,0));ballVelocity.set(0,0,0);resolveHitPlay();
+              }
+            }
+          }
           if(activeFielder&&!manualFielding){const target=ball.position.clone();target.y=0;const delta=target.sub(activeFielder.position);const distance=delta.length();if(distance>0.01)activeFielder.position.add(delta.normalize().multiplyScalar(Math.min(distance,dt*18)));const horizontal=Math.hypot(activeFielder.position.x-ball.position.x,activeFielder.position.z-ball.position.z);if(horizontal<2.7&&ball.position.y<6&&ballVelocity.y<0){fieldingResult="caught";ball.position.copy(activeFielder.position).add(new THREE.Vector3(0,1,0));ballVelocity.set(0,0,0);resolveHitPlay()}}
           if(ball&&phase==="fielding"&&ball.position.y<=.22&&ballVelocity.y<0){ball.position.y=.22;ballVelocity.y=Math.abs(ballVelocity.y)*.27;ballVelocity.multiplyScalar(.78);if(manualFielding){fieldingResult="loose";if(ballVelocity.length()<1.1)ballVelocity.set(0,0,0)}else if(ballVelocity.length()<2){fieldingResult="ground";resolveHitPlay()}}
           if(ball&&phase==="fielding"){const fence=getFenceStatus(ball.position,team.fence);if(fence.over){fieldingResult="homer";resolveHitPlay()}else if(fence.wall){fieldingResult="wall";resolveHitPlay()}else if(ball.position.x>105||ball.position.x< -105){fieldingResult="ground";resolveHitPlay()}}
