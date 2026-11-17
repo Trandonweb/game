@@ -15,18 +15,22 @@ function polygonRadius(angle,shape){
   return Math.cos(Math.PI/8)/Math.cos(local);
 }
 function makeGrassTexture(){
-  const canvas=document.createElement("canvas");canvas.width=1024;canvas.height=1024;
+  const canvas=document.createElement("canvas");canvas.width=2048;canvas.height=2048;
   const ctx=canvas.getContext("2d");
-  ctx.fillStyle="#397a40";ctx.fillRect(0,0,1024,1024);
+  const base=ctx.createLinearGradient(0,0,2048,2048);base.addColorStop(0,"#397a40");base.addColorStop(.55,"#2f6d38");base.addColorStop(1,"#285f32");
+  ctx.fillStyle=base;ctx.fillRect(0,0,2048,2048);
+  // Alternating precision-mowed bands, with a subtle cross-grain and fine turf variation.
   for(let i=0;i<16;i++){
-    ctx.fillStyle=i%2?"#438849":"#34733b";ctx.fillRect(i*64,0,64,1024);
+    ctx.fillStyle=i%2?"#4b8c4b":"#34753c";ctx.fillRect(i*128,0,128,2048);
   }
-  for(let i=0;i<18000;i++){
-    const x=Math.random()*1024,y=Math.random()*1024;
-    ctx.fillStyle=Math.random()>.5?"#ffffff0b":"#071b0710";ctx.fillRect(x,y,1.5,1.5);
+  const shade=ctx.createLinearGradient(0,0,0,2048);shade.addColorStop(0,"#ffffff08");shade.addColorStop(.5,"#00000000");shade.addColorStop(1,"#07170720");
+  ctx.fillStyle=shade;ctx.fillRect(0,0,2048,2048);
+  for(let i=0;i<32000;i++){
+    const x=Math.random()*2048,y=Math.random()*2048;
+    ctx.fillStyle=Math.random()>.5?"#ffffff12":"#071b0718";ctx.fillRect(x,y,1+Math.random()*2,1+Math.random()*2);
   }
   const texture=new THREE.CanvasTexture(canvas);texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
-  texture.repeat.set(2,2);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;return texture;
+  texture.repeat.set(2.4,2.4);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=8;return texture;
 }
 function makeSignTexture(team){
   const canvas=document.createElement("canvas");canvas.width=1024;canvas.height=256;
@@ -49,7 +53,9 @@ function addBowl(scene,team){
   const lowerRows=15,upperRows=9,tiers=2,totalRows=lowerRows+upperRows;
   const count=sections*totalRows;
   const seatGeometry=new THREE.BoxGeometry(2.25,.48,1.45);
+  const seatBackGeometry=new THREE.BoxGeometry(2.2,.72,.2);
   const seats=new THREE.InstancedMesh(seatGeometry,mat("#ffffff",.78),count);
+  const seatBacks=new THREE.InstancedMesh(seatBackGeometry,mat("#ffffff",.78),count);
   const bodies=new THREE.InstancedMesh(new THREE.CapsuleGeometry(.17,.34,3,6),mat("#ffffff",.94),count);
   const heads=new THREE.InstancedMesh(new THREE.SphereGeometry(.135,7,6),mat("#ffffff",.9),count);
   const dummy=new THREE.Object3D(),seatColors=[team.primary,team.secondary,"#657784","#d5d9dc","#b8a58b"];
@@ -64,11 +70,13 @@ function addBowl(scene,team){
       for(let section=0;section<sections;section++){
         const angle=start+(end-start)*section/(sections-1);
         const x=Math.cos(angle)*radius,z=Math.sin(angle)*radius;
-        dummy.position.set(x,y,z);dummy.rotation.set(-.04,-angle+Math.PI/2,0);dummy.scale.set(1,1,1);dummy.updateMatrix();
+        dummy.position.set(x,y,z);dummy.rotation.set(-.04,-angle-Math.PI/2,0);dummy.scale.set(1,1,1);dummy.updateMatrix();
         seats.setMatrixAt(index,dummy.matrix);
+        dummy.position.set(x+Math.cos(angle)*.62,y+.42,z+Math.sin(angle)*.62);dummy.updateMatrix();
+        seatBacks.setMatrixAt(index,dummy.matrix);
         seats.setColorAt(index,new THREE.Color(seatColors[(section*3+row*5+tier)%seatColors.length]));
         // Seated spectators are placed on the matching seat row, not in a separate overlapping ring.
-        dummy.position.set(x,y+.34,z);dummy.rotation.set(0,-angle+Math.PI/2,0);dummy.scale.set(1,1,1);dummy.updateMatrix();
+        dummy.position.set(x,y+.34,z);dummy.rotation.set(0,-angle-Math.PI/2,0);dummy.scale.set(1,1,1);dummy.updateMatrix();
         bodies.setMatrixAt(index,dummy.matrix);
         bodies.setColorAt(index,new THREE.Color(shirtColors[(section*7+row*3)%shirtColors.length]));
         dummy.position.set(x,y+.78,z);dummy.scale.set(.9,.9,.9);dummy.updateMatrix();
@@ -78,9 +86,9 @@ function addBowl(scene,team){
       }
     }
   }
-  seats.count=bodies.count=heads.count=index;
-  seats.instanceMatrix.needsUpdate=true;bodies.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;
-  scene.add(seats,bodies,heads);
+  seats.count=seatBacks.count=bodies.count=heads.count=index;
+  seats.instanceMatrix.needsUpdate=true;seatBacks.instanceMatrix.needsUpdate=true;bodies.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;
+  scene.add(seats,seatBacks,bodies,heads);
 
   const concrete=mat("#aeb8bd",.92),darkConcrete=mat("#64737d",.88),steel=mat("#354754",.62,.45);
   const arcLine=(radius,height,material,thickness)=>{
@@ -132,28 +140,48 @@ function interpolateHeight(angle,fence){
 }
 function addFence(scene,team){
   const fence=team.fence||{left:78,center:92,right:78,leftHeight:8,centerHeight:10,rightHeight:8};
-  const dark=mat("#1e4939",.68),cap=mat(team.primary,.45,.25),segments=96,posts=[];
+  const dark=mat("#203b35",.78),cap=mat(team.primary,.42,.28),postMat=mat("#d5dadd",.52,.32),segments=128;
+  const points=[],gridPoints=[],topPoints=[],basePoints=[];
+  const at=(a,offset=0)=>{const r=interpolateFence(a,fence)+offset;return [Math.cos(a)*r,0,Math.sin(a)*r]};
   for(let i=0;i<=segments;i++){
-    const a=Math.PI+Math.PI*i/segments,r=interpolateFence(a,fence),h=interpolateHeight(a,fence);
-    const x=Math.cos(a)*r,z=Math.sin(a)*r;
-    posts.push([x,h,z]);
-    if(i%4===0)box(scene,cap,x,h/2,z,.55,h,.7,-a);
+    const a=Math.PI+Math.PI*i/segments,r=interpolateFence(a,fence),h=interpolateHeight(a,fence),x=Math.cos(a)*r,z=Math.sin(a)*r;
+    points.push([x,h,z]);topPoints.push([x,h,z]);basePoints.push([x,.08,z]);
+    if(i%4===0){
+      const post=box(scene,postMat,x,h/2,z,.38,h,.42,-a-Math.PI/2);
+      post.castShadow=true;
+    }
+    // Fine vertical mesh wires; the lower impact wall remains opaque and much shorter.
+    if(i%2===0){
+      for(let y=1.35;y<h-.1;y+=.9){
+        const p=[x,y,z];gridPoints.push(new THREE.Vector3(...p),new THREE.Vector3(...p.map((v,j)=>j===0?v: j===1?y+.9:v)));
+      }
+    }
   }
   for(let i=0;i<segments;i++){
     const a=Math.PI+Math.PI*(i+.5)/segments,r=interpolateFence(a,fence),h=interpolateHeight(a,fence);
     const x=Math.cos(a)*r,z=Math.sin(a)*r;
-    const panel=box(scene,dark,x,h/2,z,r*Math.PI/segments+1,h,.55,-a-Math.PI/2);
-    panel.material.side=THREE.DoubleSide;
+    const a0=Math.PI+Math.PI*i/segments,a1=Math.PI+Math.PI*(i+1)/segments;
+    const p0=at(a0),p1=at(a1),dx=p1[0]-p0[0],dz=p1[2]-p0[2],length=Math.hypot(dx,dz);
+    const yaw=Math.atan2(-dz,dx);
+    const lower=box(scene,dark,x,.68,z,length+.08,1.25,.48,yaw);
+    lower.castShadow=true;
+    for(let y=1.45;y<h-.15;y+=1.25){
+      const p=[x,y,z];gridPoints.push(new THREE.Vector3(p[0]-Math.cos(a)*length/2,p[1],p[2]-Math.sin(a)*length/2),new THREE.Vector3(p[0]+Math.cos(a)*length/2,p[1],p[2]+Math.sin(a)*length/2));
+    }
   }
-  addLine(scene,posts.map(p=>[p[0],p[1],p[2]]),cap,.55);
-  addLine(scene,posts.map(p=>[p[0],.4,p[2]]),cap,.35);
-  // Foul poles sit where the first- and third-base foul lines meet the wall.
-  for(const a of [Math.PI+.5,Math.PI*2-.5]){
-    const r=interpolateFence(a,fence),x=Math.cos(a)*r,z=Math.sin(a)*r,h=interpolateHeight(a,fence)+13;
-    box(scene,mat("#f5d46f",.4),x,h/2,z,.65,h,.65);
-    box(scene,mat("#f5d46f",.4),x,h,z,4,.35,.35);
+  const gridGeo=new THREE.BufferGeometry().setFromPoints(gridPoints);
+  const mesh=new THREE.LineSegments(gridGeo,new THREE.LineBasicMaterial({color:"#b9c9c1",transparent:true,opacity:.48}));
+  mesh.frustumCulled=false;scene.add(mesh);
+  addLine(scene,topPoints,cap,.22);
+  addLine(scene,basePoints,cap,.16);
+  // Foul poles mark the two ends of the outfield wall.
+  for(const a of [Math.PI,Math.PI*2]){
+    const r=interpolateFence(a,fence),x=Math.cos(a)*r,z=Math.sin(a)*r,h=interpolateHeight(a,fence)+12;
+    box(scene,mat("#f5d46f",.4),x,h/2,z,.42,h,.42);
+    box(scene,mat("#f5d46f",.4),x,h,z,3,.3,.3);
   }
 }
+
 function addField(scene,team){
   const grass=mat("#ffffff",.96,0,{map:makeGrassTexture()});
   const dirt=mat("#b8875a",.96),chalk=mat("#f0ead8",.9),rubber=mat("#e4e0d4",.9);
