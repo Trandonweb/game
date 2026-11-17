@@ -191,12 +191,30 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     scene.userData.awayFielders.forEach(f=>f.visible=homeBatting);
     syncRunners();
   };
+  function simulateToHighlight(){
+    phase="auto";phaseLabel.textContent="HIGHLIGHT SIMULATION";setResult("주요 상황까지 경기를 자동으로 진행합니다.");renderControls();
+    clearTimeout(autoTimer);
+    autoTimer=window.setTimeout(()=>{
+      if(disposed||finished)return;
+      let attempts=0;
+      while(outs<2&&!bases.some(Boolean)&&attempts<8){
+        const roll=Math.random();attempts++;
+        if(roll<.62){outs++;setResult("자동 진행 · 아웃");}
+        else if(roll<.82){addBatterToBase();setResult("자동 진행 · 주자 출루");}
+        else{advanceBatter(1);setResult("자동 진행 · 안타");}
+      }
+      if(outs>=3){finishHalf();return}
+      updateMatch();setPhaseMode();
+    },850);
+  }
   const setPhaseMode=()=>{
     activeControl=getUserHalfMode();
     if(phase==="intro"||phase==="fielding"||phase==="hit-flight"||phase==="pitch-flight")return;
     if(activeControl==="auto"){runAutoHalf();return}
+    if(match.playStyle==="highlight"&&(activeControl==="bat"||activeControl==="field")&&!bases.some(Boolean)&&outs<2){simulateToHighlight();return}
     if(activeControl==="bat")startBattingTurn();else if(activeControl==="pitch")startPitchingTurn();else if(activeControl==="field")startCpuFieldAtBat();
   };
+
   const makeBall=pos=>{
     if(ball){scene.remove(ball);ball.geometry.dispose()}
     ball=addMesh(scene,new THREE.SphereGeometry(.19,20,16),ballMaterial,pos);
@@ -543,7 +561,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
       case"intentional":balls=4;addBatterToBase();resetCount();atBatResult="고의사구";finishAtBat(false);break;
       case"lead":cycleCatcherLead();renderControls();break;
       case"catch":catchBall();break;
-      case"next":if(outs>=3)finishHalf();else if(activeControl==="bat")startBattingTurn();else if(activeControl==="field")startCpuFieldAtBat();else startPitchingTurn();break;
+      case"next":if(outs>=3)finishHalf();else if(match.playStyle==="highlight")setPhaseMode();else if(activeControl==="bat")startBattingTurn();else if(activeControl==="field")startCpuFieldAtBat();else startPitchingTurn();break;
       case"finish":onFinish?.(match);break;
       case"resume":pausedState.value=false;setResult("경기를 재개합니다.");renderControls();updateMatch();break;
     }
