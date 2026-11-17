@@ -128,8 +128,8 @@ function addFence(scene,team){
   }
   addLine(scene,posts.map(p=>[p[0],p[1],p[2]]),cap,.55);
   addLine(scene,posts.map(p=>[p[0],.4,p[2]]),cap,.35);
-  // Foul poles mark the two ends of the outfield wall.
-  for(const a of [Math.PI,Math.PI*2]){
+  // Foul poles sit where the first- and third-base foul lines meet the wall.
+  for(const a of [Math.PI+.5,Math.PI*2-.5]){
     const r=interpolateFence(a,fence),x=Math.cos(a)*r,z=Math.sin(a)*r,h=interpolateHeight(a,fence)+13;
     box(scene,mat("#f5d46f",.4),x,h/2,z,.65,h,.65);
     box(scene,mat("#f5d46f",.4),x,h,z,4,.35,.35);
@@ -139,64 +139,90 @@ function addField(scene,team){
   const grass=mat("#ffffff",.96,0,{map:makeGrassTexture()});
   const dirt=mat("#b8875a",.96),chalk=mat("#f0ead8",.9),rubber=mat("#e4e0d4",.9);
   const field=add(scene,new THREE.PlaneGeometry(260,260),grass,[0,-.25,0],[-Math.PI/2,0,0]);field.receiveShadow=true;
-  // Infield dirt: a broad diamond apron plus individual dirt cutouts at every base.
-  const infield=add(scene,new THREE.CircleGeometry(21,64),dirt,[0,.018,10],[-Math.PI/2,0,0]);infield.scale.set(1,1.15,1);
-  const basePositions=[[0,.12,22],[-10,.12,11],[0,.12,0],[10,.12,11]];
+
+  // Regulation-proportioned diamond: 90 ft between bases and 60 ft 6 in to the rubber.
+  const home=[0,.12,34],first=[24.25,.12,9.75],second=[0,.12,-14.5],third=[-24.25,.12,9.75];
+  const basePositions=[home,third,second,first];
+  const infield=add(scene,new THREE.CircleGeometry(35,96),dirt,[0,.018,11],[-Math.PI/2,0,0]);
+  infield.scale.set(1,1.04,1);
   for(const [x,,z] of basePositions){
-    const cutout=add(scene,new THREE.CircleGeometry(4.1,32),dirt,[x,.035,z],[-Math.PI/2,0,0]);
+    const cutout=add(scene,new THREE.CircleGeometry(4.6,40),dirt,[x,.035,z],[-Math.PI/2,0,0]);
     cutout.scale.set(1,1.08,1);
   }
-  // Home-plate dirt circle and batter/coach boxes.
-  const homeDirt=add(scene,new THREE.CircleGeometry(8.2,48),dirt,[0,.045,23],[-Math.PI/2,0,0]);homeDirt.scale.set(1.35,.9,1);
-  const batterBoxMat=chalk;
+
+  // Home-plate circle, batter boxes and coach boxes.
+  const homeDirt=add(scene,new THREE.CircleGeometry(8.2,56),dirt,[0,.045,34],[-Math.PI/2,0,0]);
+  homeDirt.scale.set(1.35,.9,1);
   for(const side of [-1,1]){
-    const boxMark=add(scene,new THREE.PlaneGeometry(2.1,4.2),new THREE.MeshBasicMaterial({color:"#f0ead8",transparent:true,opacity:.48,side:THREE.DoubleSide}),[side*2.05,.065,22.3],[-Math.PI/2,0,0]);
-    const coach=add(scene,new THREE.PlaneGeometry(3.5,1.8),dirt,[side*15,.04,8],[-Math.PI/2,0,0]);
+    add(scene,new THREE.PlaneGeometry(2.1,4.2),new THREE.MeshBasicMaterial({color:"#f0ead8",transparent:true,opacity:.48,side:THREE.DoubleSide}),[side*2.05,.065,33.5],[-Math.PI/2,0,0]);
+    add(scene,new THREE.PlaneGeometry(5,2),dirt,[side*32,.04,5],[-Math.PI/2,0,0]);
   }
-  // Pitcher's mound and rubber.
-  const mound=add(scene,new THREE.CylinderGeometry(3.6,4.1,.7,32),dirt,[0,.35,-1]);
-  add(scene,new THREE.BoxGeometry(1.8,.18,.5),rubber,[0,.73,-1]);
-  const bases=basePositions.map(([x,y,z])=>add(scene,new THREE.BoxGeometry(2.1,.3,2.1),rubber,[x,y,z],[0,Math.PI/4,0]));
-  addLine(scene,[[0,.08,22],[-10,.08,11],[0,.08,0],[10,.08,11],[0,.08,22]],chalk,.14);
-  addLine(scene,[[0,.08,22],[-92,.08,-70]],chalk,.12);
-  addLine(scene,[[0,.08,22],[92,.08,-70]],chalk,.12);
-  // Foul-territory dirt lanes near home and both dugouts, while the rest stays grass.
+
+  // Pitcher's mound and regulation-distance rubber.
+  add(scene,new THREE.CylinderGeometry(3.4,4.0,.65,40),dirt,[0,.325,11]);
+  add(scene,new THREE.BoxGeometry(1.8,.16,.5),rubber,[0,.72,11]);
+  for(const [x,y,z] of basePositions){
+    add(scene,new THREE.BoxGeometry(.9,.18,.9),rubber,[x,y,z],[0,Math.PI/4,0]);
+  }
+  addLine(scene,[[home[0],.08,home[2]],[third[0],.08,third[2]],[second[0],.08,second[2]],[first[0],.08,first[2]],[home[0],.08,home[2]]],chalk,.12);
+
+  // Foul lines continue from home through first and third to the outfield wall.
+  const fence=team.fence||{left:78,center:92,right:78};
+  const foulEnd=side=>{
+    const radius=side<0?(fence.left||78):(fence.right||78);
+    const dz=-1/Math.SQRT2,dx=side/Math.SQRT2,dot=34*dz;
+    const distance=-dot+Math.sqrt(dot*dot+radius*radius-34*34);
+    return [dx*distance,.08,34+dz*distance];
+  };
   for(const side of [-1,1]){
-    const foulDirt=add(scene,new THREE.PlaneGeometry(13,35),dirt,[side*17,.012,16],[-Math.PI/2,0,side*.13]);
-    foulDirt.receiveShadow=true;
+    const end=foulEnd(side);
+    addLine(scene,[[0,.08,34],end],chalk,.13);
   }
-  // Warning track around the outfield.
+
+  // Dirt service strips occupy foul territory beside the two dugouts.
+  for(const side of [-1,1]){
+    const foulLane=add(scene,new THREE.PlaneGeometry(12,44),dirt,[side*42,.012,20],[-Math.PI/2,0,0]);
+    foulLane.receiveShadow=true;
+  }
+
+  // Warning track follows the outfield wall.
   const trackPoints=[];
-  for(let i=0;i<=96;i++){const a=Math.PI+Math.PI*i/96,r=interpolateFence(a,team.fence||{left:78,center:92,right:78})-4;trackPoints.push([Math.cos(a)*r,.03,Math.sin(a)*r])}
+  for(let i=0;i<=96;i++){
+    const a=Math.PI+Math.PI*i/96,r=interpolateFence(a,fence)-4;
+    trackPoints.push([Math.cos(a)*r,.03,Math.sin(a)*r]);
+  }
   addLine(scene,trackPoints,dirt,2.1);
-  // Dugouts are lowered and placed completely outside the foul lines, beside the first/third-base lines.
+
+  // Sunken dugouts are beyond the foul lines, with the open side facing the field.
   const dugoutMat=mat("#52616a",.76),roofMat=mat(team.primary,.48,.18),benchMetal=mat("#344653"),uniform=mat(team.primary),skin=mat("#bd8d6a"),cap=mat("#172a3c");
   for(const side of [-1,1]){
-    const x=side*27,z=17;
-    box(scene,dugoutMat,x,.65,z+3.5,18,1.3,.65);
-    box(scene,dugoutMat,x-side*8.65,.65,z,.65,1.3,7);
-    box(scene,dugoutMat,x+side*8.65,.65,z,.65,1.3,7);
-    box(scene,roofMat,x,1.75,z,19,.35,8);
-    box(scene,benchMetal,x,1.05,z+1.2,14,.16,.5);
+    const x=side*42,z=17,innerX=x-side*9.6;
+    box(scene,dugoutMat,x+side*9.5,.65,z,.7,1.3,8.5);
+    box(scene,dugoutMat,x,.65,z-4.1,19,1.3,.65);
+    box(scene,dugoutMat,x,.65,z+4.1,19,1.3,.65);
+    box(scene,roofMat,x,2.0,z,20,.35,9.5);
+    box(scene,benchMetal,innerX+side*4.5,1.0,z,.45,.16,12);
     for(let j=-2;j<=2;j++){
-      const px=x+j*2.55;
-      box(scene,benchMetal,px,.55,z+1.2,.15,.8,.15);
-      const torso=add(scene,new THREE.CapsuleGeometry(.3,.48,4,8),uniform,[px,.78,z+.9]);torso.rotation.x=-.16;
-      add(scene,new THREE.SphereGeometry(.2,10,8),skin,[px,1.42,z+.68]);
-      add(scene,new THREE.SphereGeometry(.22,10,8,0,Math.PI*2,0,Math.PI/2),cap,[px,1.53,z+.68]);
+      const pz=z+j*2.1,px=innerX+side*4.5;
+      box(scene,benchMetal,px,.55,pz,.16,.8,.16);
+      const torso=add(scene,new THREE.CapsuleGeometry(.3,.48,4,8),uniform,[px,.78,pz]);torso.rotation.y=side*Math.PI/2;torso.rotation.x=-.16;
+      add(scene,new THREE.SphereGeometry(.2,10,8),skin,[px,1.42,pz]);
+      add(scene,new THREE.SphereGeometry(.22,10,8,0,Math.PI*2,0,Math.PI/2),cap,[px,1.53,pz]);
     }
-    for(let j=-3;j<=3;j++)box(scene,benchMetal,x+j*2.15,.55,z-3.05,.12,1.05,.12);
   }
-  const backstop=add(scene,new THREE.TorusGeometry(16,.24,8,64,Math.PI),capMaterial(team),[0,5,29],[Math.PI/2,0,Math.PI]);
-  // Bullpens beyond the outfield foul territory.
+
+  // Backstop behind home plate.
+  add(scene,new THREE.TorusGeometry(18,.24,8,64,Math.PI),capMaterial(team),[0,5,47],[Math.PI/2,0,Math.PI]);
+
+  // Bullpens sit in foul ground beyond the outfield corners, not on the live field.
   const bullpenFloor=mat("#a97850",.96),bullpenRail=mat("#344b59",.62,.25);
   for(const side of [-1,1]){
-    const bx=side*48,bz=-30;
-    const floor=add(scene,new THREE.CircleGeometry(11,32),bullpenFloor,[bx,.035,bz],[-Math.PI/2,0,0]);floor.scale.set(1.25,.72,1);
-    box(scene,bullpenRail,bx,1.15,bz-9,29,2.3,.55);box(scene,bullpenRail,bx,1.15,bz+9,29,2.3,.55);
-    for(let j=-1;j<=1;j++){add(scene,new THREE.CylinderGeometry(1.25,1.25,.25,20),dirt,[bx+j*6,.18,bz]);box(scene,rubber,bx+j*6,.34,bz,.75,.12,.28)}
-    box(scene,roofMat,bx,4.2,bz-9,30,.45,3);
-    for(let j=-2;j<=2;j++)box(scene,dugoutMat,bx+j*5,2,bz-9,.35,3.5,.35);
+    const bx=side*75,bz=-25;
+    const floor=add(scene,new THREE.CircleGeometry(9,32),bullpenFloor,[bx,.035,bz],[-Math.PI/2,0,0]);floor.scale.set(1.25,.72,1);
+    box(scene,bullpenRail,bx,1.15,bz-8,24,2.3,.55);box(scene,bullpenRail,bx,1.15,bz+8,24,2.3,.55);
+    for(let j=-1;j<=1;j++){add(scene,new THREE.CylinderGeometry(1.25,1.25,.25,20),dirt,[bx+j*5,.18,bz]);box(scene,rubber,bx+j*5,.34,bz,.75,.12,.28)}
+    box(scene,roofMat,bx,4.2,bz-8,25,.45,3);
+    for(let j=-2;j<=2;j++)box(scene,dugoutMat,bx+j*4,2,bz-8,.35,3.5,.35);
   }
   return {grass,dirt};
 }
