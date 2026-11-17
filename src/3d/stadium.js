@@ -43,64 +43,83 @@ function addLine(scene,points,material,radius=.12){
   return add(scene,new THREE.TubeGeometry(curve,Math.max(24,points.length*8),radius,6,false),material);
 }
 function addBowl(scene,team){
-  const shape=team.parkShape||"octagon",base=team.parkStyle==="dome"?112:103;
-  const sections=shape==="circle"?96:8;
-  const seatGeometry=new THREE.BoxGeometry(2.45,.62,1.7);
-  const seatMaterials=[mat(team.primary,.72),mat(team.secondary,.72),mat("#526474",.85),mat("#d4dbe0",.82)];
-  const seats=new THREE.InstancedMesh(seatGeometry,seatMaterials[0],sections*18*4);
-  seats.instanceMatrix.setUsage(THREE.StaticDrawUsage);
-  const dummy=new THREE.Object3D(),palette=[0,1,2,0,2,1,3,0];
+  // Baseball seating wraps the outfield and stops before the area directly behind home plate.
+  // The first lower-deck row begins just beyond the outfield wall, instead of leaving a wide empty gap.
+  const start=Math.PI+.2,end=Math.PI*2-.2,sections=128;
+  const lowerRows=15,upperRows=9,tiers=2,totalRows=lowerRows+upperRows;
+  const count=sections*totalRows;
+  const seatGeometry=new THREE.BoxGeometry(2.25,.48,1.45);
+  const seats=new THREE.InstancedMesh(seatGeometry,mat("#ffffff",.78),count);
+  const bodies=new THREE.InstancedMesh(new THREE.CapsuleGeometry(.17,.34,3,6),mat("#ffffff",.94),count);
+  const heads=new THREE.InstancedMesh(new THREE.SphereGeometry(.135,7,6),mat("#ffffff",.9),count);
+  const dummy=new THREE.Object3D(),seatColors=[team.primary,team.secondary,"#657784","#d5d9dc","#b8a58b"];
+  const shirtColors=[team.primary,team.secondary,"#e3e5e6","#a9b4bb","#35495c","#927b67"];
+  const skinColors=["#bd8d6a","#d4a47d","#8b604b","#e0b99a"];
   let index=0;
-  for(let section=0;section<sections;section++){
-    const angle=section/sections*Math.PI*2;
-    const radiusScale=polygonRadius(angle,shape);
-    for(let tier=0;tier<2;tier++)for(let row=0;row<9;row++){
-      const r=base+row*1.95+tier*25;
-      const y=13+row*.82+tier*9;
-      const x=Math.cos(angle)*r*radiusScale,z=Math.sin(angle)*r*radiusScale;
-      dummy.position.set(x,y,z);dummy.rotation.set(-.08,-angle+Math.PI/2,0);dummy.scale.set(1,1,1);dummy.updateMatrix();
-      seats.setMatrixAt(index,dummy.matrix);seats.setColorAt(index,new THREE.Color([team.primary,team.secondary,"#526474","#d4dbe0"][palette[(section*3+row+tier*2)%palette.length]]));index++;
+  for(let tier=0;tier<tiers;tier++){
+    const rows=tier===0?lowerRows:upperRows;
+    for(let row=0;row<rows;row++){
+      const radius=96+row*1.9+tier*31;
+      const y=8+row*.72+tier*13;
+      for(let section=0;section<sections;section++){
+        const angle=start+(end-start)*section/(sections-1);
+        const x=Math.cos(angle)*radius,z=Math.sin(angle)*radius;
+        dummy.position.set(x,y,z);dummy.rotation.set(-.04,-angle+Math.PI/2,0);dummy.scale.set(1,1,1);dummy.updateMatrix();
+        seats.setMatrixAt(index,dummy.matrix);
+        seats.setColorAt(index,new THREE.Color(seatColors[(section*3+row*5+tier)%seatColors.length]));
+        // Seated spectators are placed on the matching seat row, not in a separate overlapping ring.
+        dummy.position.set(x,y+.34,z);dummy.rotation.set(0,-angle+Math.PI/2,0);dummy.scale.set(1,1,1);dummy.updateMatrix();
+        bodies.setMatrixAt(index,dummy.matrix);
+        bodies.setColorAt(index,new THREE.Color(shirtColors[(section*7+row*3)%shirtColors.length]));
+        dummy.position.set(x,y+.78,z);dummy.scale.set(.9,.9,.9);dummy.updateMatrix();
+        heads.setMatrixAt(index,dummy.matrix);
+        heads.setColorAt(index,new THREE.Color(skinColors[(section+row*2)%skinColors.length]));
+        index++;
+      }
     }
   }
-  seats.count=index;seats.instanceMatrix.needsUpdate=true;scene.add(seats);
+  seats.count=bodies.count=heads.count=index;
+  seats.instanceMatrix.needsUpdate=true;bodies.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;
+  scene.add(seats,bodies,heads);
+
   const concrete=mat("#aeb8bd",.92),darkConcrete=mat("#64737d",.88),steel=mat("#354754",.62,.45);
-  // Tier fascia, concourses and roof trusses.
-  for(let tier=0;tier<3;tier++){
-    const radius=base+20+tier*24,height=22+tier*9,points=[];
-    const count=shape==="circle"?128:8;
-    for(let i=0;i<=count;i++){const a=i/count*Math.PI*2,r=radius*polygonRadius(a,shape);points.push([Math.cos(a)*r,height,Math.sin(a)*r])}
-    addLine(scene,points,tier===1?darkConcrete:concrete,2.3);
-    const fascia=[];
-    for(let i=0;i<=count;i++){const a=i/count*Math.PI*2,r=(radius+3)*polygonRadius(a,shape);fascia.push([Math.cos(a)*r,height-2,Math.sin(a)*r])}
-    addLine(scene,fascia,steel,1.05);
-  }
-  for(let i=0;i<sections;i++){
-    const a=i/sections*Math.PI*2,r=(base+60)*polygonRadius(a,shape);
-    const support=box(scene,steel,Math.cos(a)*r,26,Math.sin(a)*r,2.2,30,2.2);
-    support.rotation.z=Math.cos(a)*-.06;
-  }
-  if(team.parkStyle!=="open"){
-    const roofOuter=base+65,roofInner=base+19;
-    const roofShape=new THREE.Shape(),hole=new THREE.Path(),steps=shape==="circle"?96:8;
-    for(let i=0;i<=steps;i++){const a=i/steps*Math.PI*2,r=roofOuter*polygonRadius(a,shape),x=Math.cos(a)*r,y=Math.sin(a)*r;i===0?roofShape.moveTo(x,y):roofShape.lineTo(x,y)}
-    for(let i=steps;i>=0;i--){const a=i/steps*Math.PI*2,r=roofInner*polygonRadius(a,shape),x=Math.cos(a)*r,y=Math.sin(a)*r;i===steps?hole.moveTo(x,y):hole.lineTo(x,y)}
-    roofShape.holes.push(hole);
-    const roof=add(scene,new THREE.ShapeGeometry(roofShape,2),mat("#d8e1e5",.48,.18,{side:THREE.DoubleSide}),[0,team.parkStyle==="dome"?49:39,0],[-Math.PI/2,0,0]);
-    roof.receiveShadow=true;
-    const rim=[];
-    for(let i=0;i<=steps;i++){const a=i/steps*Math.PI*2,r=roofOuter*polygonRadius(a,shape);rim.push([Math.cos(a)*r,team.parkStyle==="dome"?49:39,Math.sin(a)*r])}
-    addLine(scene,rim,steel,1.6);
-    if(team.parkStyle==="dome"){
-      const shell=add(scene,new THREE.SphereGeometry(roofOuter,64,24,0,Math.PI*2,0,Math.PI/2),new THREE.MeshPhysicalMaterial({color:"#b8d1dc",roughness:.22,metalness:.08,transparent:true,opacity:.22,side:THREE.DoubleSide}),[0,38,0]);
-      shell.scale.y=.38;
-    }
-  }
-  // Small light strips and vomitory portals make the stands read as real architecture.
+  const arcLine=(radius,height,material,thickness)=>{
+    const points=[];
+    for(let i=0;i<=96;i++){const a=start+(end-start)*i/96;points.push([Math.cos(a)*radius,height,Math.sin(a)*radius])}
+    addLine(scene,points,material,thickness);
+  };
+  // Two visible deck fronts and a concourse divide the lower and upper seating bowls.
+  arcLine(126,23,concrete,2.0);arcLine(129,21,steel,.9);
+  arcLine(158,38,darkConcrete,2.2);arcLine(161,36,steel,1.0);
+  // Open vomitories interrupt the seating at regular intervals.
   const portalMat=mat("#182733",.8),lightMat=new THREE.MeshBasicMaterial({color:"#f5e6b4"});
-  for(let i=0;i<sections;i+=Math.max(1,Math.floor(sections/16))){
-    const a=i/sections*Math.PI*2,r=(base+18)*polygonRadius(a,shape);
-    box(scene,portalMat,Math.cos(a)*r,19,Math.sin(a)*r,8,5,1.2,-a);
-    const strip=box(scene,lightMat,Math.cos(a)*(r+4),27,Math.sin(a)*(r+4),10,.25,.35,-a);
+  for(let i=0;i<=12;i++){
+    const angle=start+(end-start)*i/12,r=127;
+    const x=Math.cos(angle)*r,z=Math.sin(angle)*r;
+    box(scene,portalMat,x,18,z,5.5,4.5,1.4,-angle);
+    box(scene,lightMat,x,25,z,6,.22,.3,-angle);
+  }
+  // Roof canopy covers the outfield seating only; it does not form a ring behind home plate.
+  if(team.parkStyle!=="open"){
+    const outer=176,inner=99,shape=new THREE.Shape();
+    const steps=96;
+    for(let i=0;i<=steps;i++){
+      const angle=start+(end-start)*i/steps,x=Math.cos(angle)*outer,y=Math.sin(angle)*outer;
+      i===0?shape.moveTo(x,y):shape.lineTo(x,y);
+    }
+    for(let i=steps;i>=0;i--){
+      const angle=start+(end-start)*i/steps,x=Math.cos(angle)*inner,y=Math.sin(angle)*inner;
+      shape.lineTo(x,y);
+    }
+    shape.closePath();
+    const roof=add(scene,new THREE.ShapeGeometry(shape,2),mat("#d8e1e5",.48,.18,{side:THREE.DoubleSide}),[0,team.parkStyle==="dome"?52:43,0],[-Math.PI/2,0,0]);
+    roof.receiveShadow=true;
+    arcLine(outer,team.parkStyle==="dome"?52:43,steel,1.5);
+  }
+  // Roof supports remain behind the seats, clear of the playable field.
+  for(let i=0;i<=10;i++){
+    const angle=start+(end-start)*i/10,r=170,x=Math.cos(angle)*r,z=Math.sin(angle)*r;
+    box(scene,steel,x,25,z,1.8,30,1.8,-angle);
   }
 }
 function interpolateFence(angle,fence){
@@ -278,7 +297,7 @@ function createPark(team){
   const sun=new THREE.DirectionalLight("#fff0d4",3.1);sun.position.set(-100,150,85);sun.castShadow=true;
   sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-170;sun.shadow.camera.right=170;sun.shadow.camera.top=170;sun.shadow.camera.bottom=-170;sun.shadow.bias=-.00025;scene.add(sun);
   const field=addField(scene,team);
-  addFence(scene,team);addBowl(scene,team);addStadiumDetails(scene,team);addCrowd(scene,team);
+  addFence(scene,team);addBowl(scene,team);addStadiumDetails(scene,team);
   if(team.parkStyle==="coastal"){
     const water=add(scene,new THREE.PlaneGeometry(420,160),mat("#397e91",.34,.12),[0,-1,-245],[-Math.PI/2,0,0]);
     const horizon=mat("#c0d2d6",.9);for(let i=0;i<8;i++)box(scene,horizon,-190+i*54,4,-235-i%2*9,38,1,4);
