@@ -265,3 +265,17 @@
   .diamond-field-controls{gap:13px}.diamond-move-pad{grid-template-columns:repeat(3,34px);grid-template-rows:repeat(2,34px)}.diamond-field-actions small{font-size:9px}
   .diamond-bottom-bar{align-items:flex-start;flex-direction:column}.diamond-bottom-bar>div{width:100%}.diamond-utility{flex:1}
 }
+
+
+/* Fielding POV controls: compact camera selector above the movement pad. */
+.diamond-field-camera{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.diamond-field-camera button{border:1px solid #42586d;background:#142437;color:#aebdca;border-radius:8px;padding:9px 12px;font-size:10px;font-weight:800}
+.diamond-field-camera button.selected{border-color:#e2bd72;background:#e2bd7218;color:#f3d79b;box-shadow:inset 0 0 0 1px #e2bd7240}
+.diamond-field-controls{display:grid;grid-template-columns:auto auto minmax(180px,1fr);align-items:center;gap:18px}
+.diamond-field-actions small{display:block;color:#a9bacb;font-size:10px;margin:0 0 8px}
+@media(max-width:720px){
+  .diamond-field-controls{grid-template-columns:1fr 1fr;gap:10px}
+  .diamond-field-camera{grid-column:1/-1}
+  .diamond-field-camera button{flex:1}
+  .diamond-field-actions{min-width:0}
+}
