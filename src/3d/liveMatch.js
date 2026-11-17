@@ -697,7 +697,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
       activeFielder.rotation.y=Math.atan2(forward.x,-forward.z);
       if(fieldCameraMode==="first"){
         cameraTarget.copy(anchor).add(new THREE.Vector3(0,1.72,0));
-        cameraLookTarget.copy(anchor).add(forward.clone().multiplyScalar(18)).add(new THREE.Vector3(0,1.25,0));
+        cameraLookTarget.copy(ball.position).add(new THREE.Vector3(0,.15,0));
       }else{
         const right=new THREE.Vector3(forward.z,0,-forward.x);
         cameraTarget.copy(anchor).add(forward.clone().multiplyScalar(-7.2)).add(right.multiplyScalar(1.05)).add(new THREE.Vector3(0,3.15,0));
