@@ -154,8 +154,10 @@ function addField(scene,team){
   const homeDirt=add(scene,new THREE.CircleGeometry(8.2,56),dirt,[0,.045,34],[-Math.PI/2,0,0]);
   homeDirt.scale.set(1.35,.9,1);
   for(const side of [-1,1]){
-    add(scene,new THREE.PlaneGeometry(2.1,4.2),new THREE.MeshBasicMaterial({color:"#f0ead8",transparent:true,opacity:.48,side:THREE.DoubleSide}),[side*2.05,.065,33.5],[-Math.PI/2,0,0]);
-    add(scene,new THREE.PlaneGeometry(5,2),dirt,[side*32,.04,5],[-Math.PI/2,0,0]);
+    const bx=side*1.45,bz=34,halfW=.78,halfL=1.18;
+    addLine(scene,[[bx-halfW,.08,bz-halfL],[bx+halfW,.08,bz-halfL],[bx+halfW,.08,bz+halfL],[bx-halfW,.08,bz+halfL],[bx-halfW,.08,bz-halfL]],chalk,.045);
+    const cx=side*36,cz=5,cw=2.5,cl=1.0;
+    addLine(scene,[[cx-cw,.08,cz-cl],[cx+cw,.08,cz-cl],[cx+cw,.08,cz+cl],[cx-cw,.08,cz+cl],[cx-cw,.08,cz-cl]],chalk,.05);
   }
 
   // Pitcher's mound and regulation-distance rubber.
@@ -181,7 +183,7 @@ function addField(scene,team){
 
   // Dirt service strips occupy foul territory beside the two dugouts.
   for(const side of [-1,1]){
-    const foulLane=add(scene,new THREE.PlaneGeometry(12,44),dirt,[side*42,.012,20],[-Math.PI/2,0,0]);
+    const foulLane=add(scene,new THREE.PlaneGeometry(12,44),dirt,[side*48,.012,20],[-Math.PI/2,0,0]);
     foulLane.receiveShadow=true;
   }
 
@@ -196,7 +198,7 @@ function addField(scene,team){
   // Sunken dugouts are beyond the foul lines, with the open side facing the field.
   const dugoutMat=mat("#52616a",.76),roofMat=mat(team.primary,.48,.18),benchMetal=mat("#344653"),uniform=mat(team.primary),skin=mat("#bd8d6a"),cap=mat("#172a3c");
   for(const side of [-1,1]){
-    const x=side*42,z=17,innerX=x-side*9.6;
+    const x=side*48,z=17,innerX=x-side*9.6;
     box(scene,dugoutMat,x+side*9.5,.65,z,.7,1.3,8.5);
     box(scene,dugoutMat,x,.65,z-4.1,19,1.3,.65);
     box(scene,dugoutMat,x,.65,z+4.1,19,1.3,.65);
