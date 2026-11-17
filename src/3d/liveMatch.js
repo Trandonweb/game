@@ -399,8 +399,8 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     if(phase!=="fielding"||!ball||!activeFielder)return;
     if(fieldingResult!=="caught"&&fieldingResult!=="ground-caught")return setResult("먼저 수비수를 공 가까이 이동시켜 포구하세요.");
     throwTarget=BASE_POSITIONS[base];throwClock=0;
-    const baseIndex={first:0,second:1,third:2,home:3}[base],occupied=base==="first"?true:base==="home"?!!bases[2]:!!bases[baseIndex];
-    const runnerSpeed=8.5+((half==="bottom"?(batterStats?.speed??65):65)*.035),firstBaseTime=34.3/runnerSpeed,targetTime=base==="first"?firstBaseTime:baseIndex*firstBaseTime,throwTravel=ball.position.distanceTo(throwTarget)/54;
+    const baseIndex={first:0,second:1,third:2,home:3}[base],occupied=base==="first"?true:base==="second"?!!bases[0]:base==="third"?!!bases[1]:!!bases[2];
+    const runnerSpeed=8.5+((half==="bottom"?(batterStats?.speed??65):65)*.035),baseRunTime=34.3/runnerSpeed,targetTime=baseRunTime,throwTravel=ball.position.distanceTo(throwTarget)/54;
     throwResult=fieldingResult==="caught"||occupied&&batterRunTimer+throwTravel<targetTime?"out":"safe";
     ballVelocity.copy(throwTarget.clone().sub(ball.position).normalize().multiplyScalar(54));
     phase="throw-flight";fieldingResult="throwing";setResult(({first:"1루",second:"2루",third:"3루",home:"홈"})[base]+"로 송구합니다.");
