@@ -9,34 +9,78 @@ const addMesh=(parent,geometry,mat,pos=[0,0,0])=>{const m=new THREE.Mesh(geometr
 
 function makePlayer(teamColor="#315c82",number="7",kind="fielder"){
   const root=new THREE.Group();
-  const jersey=material(teamColor),pants=material("#e5e8e8"),skin=material("#bd8d6a"),shoe=material("#18222a"),helmet=material("#182b40",.38,.18),glove=material("#76533a");
-  const torso=addMesh(root,new THREE.CapsuleGeometry(.34,.66,6,12),jersey,[0,1.34,0]);torso.rotation.z=-.025;
-  const neck=addMesh(root,new THREE.CylinderGeometry(.09,.12,.22,12),skin,[0,1.88,0]);
-  const head=addMesh(root,new THREE.SphereGeometry(.22,18,14),skin,[0,2.08,0]);
-  const cap=addMesh(root,new THREE.SphereGeometry(.235,18,10,0,Math.PI*2,0,Math.PI/2),helmet,[0,2.2,0]);
-  const brim=addMesh(root,new THREE.BoxGeometry(.34,.035,.2),helmet,[0,2.17,-.16]);
-  const pelvis=addMesh(root,new THREE.BoxGeometry(.48,.28,.3),pants,[0,.91,0]);
+  const jerseyMat=material(teamColor,.72),pantsMat=material("#e7e8e4",.86),skinMat=material("#bd8d6a",.82),shoeMat=material("#17212b",.48),helmetMat=material(teamColor,.36,.12),gloveMat=material("#78543a",.82),darkMat=material("#18212a",.6);
+  const addPart=(parent,geometry,mat,pos,scale,rot)=>{
+    const mesh=addMesh(parent,geometry,mat,pos);
+    if(scale)mesh.scale.set(...scale);
+    if(rot)mesh.rotation.set(...rot);
+    return mesh;
+  };
+  // Body proportions are built as connected anatomical sections rather than one capsule silhouette.
+  const torso=addPart(root,new THREE.CapsuleGeometry(.34,.68,10,18),jerseyMat,[0,1.38,0],[1.03,1, .78]);
+  torso.rotation.z=-.018;
+  const chest=addPart(root,new THREE.SphereGeometry(.325,24,18),jerseyMat,[0,1.55,-.015],[1.05,.88,.8]);
+  const neck=addPart(root,new THREE.CylinderGeometry(.095,.12,.2,18),skinMat,[0,1.91,0]);
+  const head=addPart(root,new THREE.SphereGeometry(.225,24,20),skinMat,[0,2.12,-.015],[.94,1.08,.88]);
+  // Ears, nose, eyes and brows give the face readable structure even at gameplay distance.
+  for(const side of [-1,1]){
+    addPart(root,new THREE.SphereGeometry(.055,12,10),skinMat,[side*.218,2.12,-.005],[.72,1.1,.65]);
+    addPart(root,new THREE.SphereGeometry(.027,10,8),darkMat,[side*.078,2.145,-.205],[1,.72,.5]);
+    const brow=addPart(root,new THREE.BoxGeometry(.085,.018,.018),darkMat,[side*.078,2.19,-.205]);
+    brow.rotation.z=side*.12;
+  }
+  addPart(root,new THREE.SphereGeometry(.035,10,8),skinMat,[0,2.105,-.225],[.72,1.2,.72]);
+  // Cap crown and curved visor.
+  addPart(root,new THREE.SphereGeometry(.238,22,12,0,Math.PI*2,0,Math.PI/2),helmetMat,[0,2.27,-.01],[1, .72,1]);
+  const brim=addPart(root,new THREE.SphereGeometry(.205,20,10,0,Math.PI*2,0,Math.PI/2),helmetMat,[0,2.205,-.12],[1.15,.16,.85]);
+  brim.rotation.x=Math.PI;
+  addPart(root,new THREE.CylinderGeometry(.022,.022,.035,12),material("#d7dce0",.42,.5),[0,2.405,-.01]);
+  // Jersey collar, sleeve cuffs and piping.
+  addPart(root,new THREE.TorusGeometry(.112,.025,8,20),material("#f2f2ed",.55),[0,1.91,0],[1,1,.8],[Math.PI/2,0,0]);
+  for(const side of [-1,1]){
+    const sleeve=addPart(root,new THREE.CapsuleGeometry(.12,.24,6,12),jerseyMat,[side*.36,1.62,0],[1,1,.92],[0,0,side*.42]);
+    addPart(root,new THREE.TorusGeometry(.105,.018,7,16),material("#f1eee5",.65),[side*.43,1.48,-.005],[1,1,.9],[0,0,side*.42]);
+  }
+  // Front number plate and fine uniform seams.
+  const badgeCanvas=document.createElement("canvas");badgeCanvas.width=256;badgeCanvas.height=256;
+  const badgeCtx=badgeCanvas.getContext("2d");badgeCtx.clearRect(0,0,256,256);
+  badgeCtx.fillStyle="#ffffff";badgeCtx.font="900 142px system-ui";badgeCtx.textAlign="center";badgeCtx.textBaseline="middle";badgeCtx.shadowColor="#0008";badgeCtx.shadowBlur=5;badgeCtx.fillText(String(number),128,132);
+  const badgeTexture=new THREE.CanvasTexture(badgeCanvas);badgeTexture.colorSpace=THREE.SRGBColorSpace;
+  const badge=addPart(root,new THREE.PlaneGeometry(.29,.31),new THREE.MeshBasicMaterial({map:badgeTexture,transparent:true,depthWrite:false}),[0,1.48,-.276]);
+  badge.rotation.y=0;
+  const seamMat=material("#f2eee4",.7);
+  for(const side of [-1,1]){
+    const stripe=addPart(root,new THREE.BoxGeometry(.025,.56,.018),seamMat,[side*.255,.93,-.12]);
+    stripe.rotation.z=side*.04;
+  }
+  const pelvis=addPart(root,new THREE.BoxGeometry(.48,.26,.31),pantsMat,[0,.96,0]);
+  addPart(root,new THREE.BoxGeometry(.48,.065,.33),darkMat,[0,1.08,0]);
   const legs=[];
   for(const side of [-1,1]){
-    const hip=new THREE.Group();hip.position.set(side*.15,.82,0);root.add(hip);
-    addMesh(hip,new THREE.CapsuleGeometry(.105,.55,5,9),pants,[0,-.31,0]);
-    addMesh(hip,new THREE.BoxGeometry(.2,.13,.36),shoe,[0,-.67,-.055]);
+    const hip=new THREE.Group();hip.position.set(side*.15,.86,0);root.add(hip);
+    addPart(hip,new THREE.CapsuleGeometry(.115,.48,8,12),pantsMat,[0,-.28,0],[1,1,.95]);
+    addPart(hip,new THREE.CylinderGeometry(.075,.09,.22,12),material("#263d54",.82),[0,-.61,0]);
+    addPart(hip,new THREE.BoxGeometry(.21,.14,.38),shoeMat,[0,-.75,-.06]);
+    addPart(hip,new THREE.BoxGeometry(.18,.025,.25),material("#d9dfe4",.55),[0,-.69,-.12]);
     legs.push(hip);
   }
   const arms=[];
   for(const side of [-1,1]){
-    const shoulder=new THREE.Group();shoulder.position.set(side*.34,1.63,0);root.add(shoulder);
-    addMesh(shoulder,new THREE.CapsuleGeometry(.095,.42,5,9),jersey,[0,-.25,0]);
-    const elbow=new THREE.Group();elbow.position.set(0,-.48,0);shoulder.add(elbow);
-    addMesh(elbow,new THREE.CapsuleGeometry(.075,.39,5,9),skin,[0,-.22,0]);
-    addMesh(elbow,new THREE.SphereGeometry(.09,10,8),glove,[0,-.45,-.02]);
+    const shoulder=new THREE.Group();shoulder.position.set(side*.34,1.66,0);root.add(shoulder);
+    addPart(shoulder,new THREE.CapsuleGeometry(.105,.32,8,12),jerseyMat,[0,-.19,0],[1,1,.95]);
+    const elbow=new THREE.Group();elbow.position.set(0,-.39,0);shoulder.add(elbow);
+    addPart(elbow,new THREE.CapsuleGeometry(.073,.36,8,12),skinMat,[0,-.2,0]);
+    addPart(elbow,new THREE.SphereGeometry(.085,14,10),skinMat,[0,-.42,-.01]);
+    if(side===-1&&kind!=="batter"){
+      addPart(elbow,new THREE.BoxGeometry(.18,.15,.2),gloveMat,[0,-.42,-.06]);
+      for(let finger=0;finger<4;finger++)addPart(elbow,new THREE.CapsuleGeometry(.022,.11,4,6),gloveMat,[-.06+finger*.04,-.49,-.14]);
+      addPart(elbow,new THREE.TorusGeometry(.09,.018,6,12),material("#c8a16b",.7),[0,-.4,-.12]);
+    }
     arms.push({shoulder,elbow,side});
   }
-  const belt=addMesh(root,new THREE.BoxGeometry(.49,.07,.32),material("#26323c"),[0,1.01,0]);
   const batPivot=new THREE.Group();batPivot.position.set(.28,1.47,-.34);batPivot.rotation.x=-.25;batPivot.visible=kind==="batter";root.add(batPivot);
-  const batGrip=addMesh(batPivot,new THREE.CylinderGeometry(.035,.04,.42,10),material("#765033"),[0,.2,0]);
-  const batBarrel=addMesh(batPivot,new THREE.CylinderGeometry(.065,.115,.88,12),material("#c89a5e"),[0,.82,0]);
-  batBarrel.rotation.z=-.035;
+  addPart(batPivot,new THREE.CylinderGeometry(.035,.04,.42,12),material("#765033"),[0,.2,0]);
+  const batBarrel=addPart(batPivot,new THREE.CylinderGeometry(.065,.115,.88,16),material("#c89a5e",.42),[0,.82,0]);batBarrel.rotation.z=-.035;
   root.userData={torso,head,arms,legs,batPivot,kind,walkPhase:Math.random()*6,targetPosition:new THREE.Vector3(0,0,34)};
   return root;
 }
@@ -100,7 +144,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
   const canvas=host.querySelector("#diamond-canvas"),view=host.querySelector(".diamond-game-view"),controls=host.querySelector("#diamond-controls");
   const scoreboard=host.querySelector("#diamond-scoreboard"),caption=host.querySelector("#diamond-caption"),intro=host.querySelector("#diamond-intro"),resultText=host.querySelector("#diamond-result"),countText=host.querySelector("#diamond-count"),phaseLabel=host.querySelector("#diamond-phase-label"),hint=host.querySelector("#diamond-hint"),speedText=host.querySelector("#diamond-speed");
   const pausedState={value:false};
-  let renderer,scene,camera,resizeObserver,raf=0,disposed=false,last=performance.now(),clock=0,introClock=0,phase="intro",viewMode="broadcast",cameraTarget=new THREE.Vector3(0,65,110),cameraLookTarget=new THREE.Vector3(0,0,-10),cameraLookCurrent=new THREE.Vector3(0,0,-10),activeControl="auto",pitchKind="fastball",aim={x:0,y:0},pitchClock=0,swingClock=0,swingPressed=false,swingAttempted=false,pendingBunt=false,ball=null,ballVelocity=new THREE.Vector3(),ballSpin=0,battingPlayer=null,pitchingPlayer=null,catcher=null,umpire=null,activeFielder=null,activeFielderIndex=0,fielders=[],benchView=false,ballInPlay=false,playResolved=false,selectedSteal=0,scoreRuns=match.userRuns||0,opponentRuns=match.opponentRuns||0,outs=match.outs||0,balls=match.balls||0,strikes=match.strikes||0,hits=match.hits||0,homeRuns=match.homeRuns||0,strikeouts=match.strikeouts||0,userHits=match.userHits||0,userHomeRuns=match.userHomeRuns||0,userStrikeouts=match.userStrikeouts||0,pitches=match.pitches||0,inning=match.inning||1,half=match.half||"top",bases=Array.isArray(match.bases)?match.bases.slice(0,3):[false,false,false],userAtBatDone=false,finished=false,autoTimer=0,throwTarget=null,throwClock=0,throwResult=null,batterRunTimer=0,fieldingResult=null,atBatResult="",runLog=[],introPlayers=[],pitchTarget={x:0,y:2.45},selectedPitch="fastball",catcherLead=match.catcherLead||"center",isTouchingZone=false,zonePointer=null,manualFielding=false;
+  let renderer,scene,camera,resizeObserver,raf=0,disposed=false,last=performance.now(),clock=0,introClock=0,phase="intro",viewMode="broadcast",cameraTarget=new THREE.Vector3(0,65,110),cameraLookTarget=new THREE.Vector3(0,0,-10),cameraLookCurrent=new THREE.Vector3(0,0,-10),activeControl="auto",pitchKind="fastball",aim={x:0,y:0},pitchClock=0,swingClock=0,swingPressed=false,swingAttempted=false,pendingBunt=false,ball=null,ballVelocity=new THREE.Vector3(),ballSpin=0,battingPlayer=null,pitchingPlayer=null,catcher=null,umpire=null,activeFielder=null,activeFielderIndex=0,fielders=[],benchView=false,ballInPlay=false,playResolved=false,selectedSteal=0,scoreRuns=match.userRuns||0,opponentRuns=match.opponentRuns||0,outs=match.outs||0,balls=match.balls||0,strikes=match.strikes||0,hits=match.hits||0,homeRuns=match.homeRuns||0,strikeouts=match.strikeouts||0,userHits=match.userHits||0,userHomeRuns=match.userHomeRuns||0,userStrikeouts=match.userStrikeouts||0,pitches=match.pitches||0,inning=match.inning||1,half=match.half||"top",bases=Array.isArray(match.bases)?match.bases.slice(0,3):[false,false,false],userAtBatDone=false,finished=false,autoTimer=0,throwTarget=null,throwClock=0,throwResult=null,batterRunTimer=0,fieldingResult=null,atBatResult="",runLog=[],introPlayers=[],pitchTarget={x:0,y:2.45},selectedPitch="fastball",catcherLead=match.catcherLead||"center",isTouchingZone=false,zonePointer=null,manualFielding=false,fieldCameraMode="third";
   let nextRunnerId=1,runnerTokens=bases.map(occupied=>occupied?"runner-"+nextRunnerId++:null);
   const players=[],fieldObjects=[],fieldMaterial=material("#3e7b42"),ballMaterial=material("#f8f7ef",.32),whiteMaterial=material("#f4f1e9");
   const baseColors=["#f1eee4","#f1eee4","#f1eee4"];
@@ -195,8 +239,8 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
       hint.textContent="상대 수비가 자동으로 타구를 처리합니다.";
       controls.innerHTML='<div class="diamond-wait">수비수가 타구를 쫓고 있습니다. 타구 방향과 결과를 확인하세요.</div>';
     }else if(phase==="fielding"){
-      hint.textContent="WASD/방향키로 수비수 이동 · 공 가까이에서 SPACE 포구 · 1/2/3/4 송구";
-      controls.innerHTML='<div class="diamond-field-controls"><div class="diamond-move-pad"><button data-move="0,-1">↑</button><button data-move="-1,0">←</button><button data-move="1,0">→</button><button data-move="0,1">↓</button></div><div class="diamond-field-actions"><small>수비수 이동 · 공에 접근해 포구</small><button class="diamond-primary" data-control="catch">포구</button><div class="diamond-throw-grid"><button data-throw="first">1루 송구</button><button data-throw="second">2루 송구</button><button data-throw="third">3루 송구</button><button data-throw="home">홈 송구</button></div></div></div>';
+      hint.textContent="내 포지션 시점에서 타구를 추적하세요 · WASD 이동 · SPACE 포구";
+      controls.innerHTML='<div class="diamond-field-controls"><div class="diamond-field-camera"><button data-field-camera="third" class="'+(fieldCameraMode==="third"?"selected":"")+'">뒤에서 보기</button><button data-field-camera="first" class="'+(fieldCameraMode==="first"?"selected":"")+'">1인칭</button></div><div class="diamond-move-pad"><button data-move="0,-1">↑</button><button data-move="-1,0">←</button><button data-move="1,0">→</button><button data-move="0,1">↓</button></div><div class="diamond-field-actions"><small>수비수 이동 · 공에 접근해 포구</small><button class="diamond-primary" data-control="catch">포구</button><div class="diamond-throw-grid"><button data-throw="first">1루 송구</button><button data-throw="second">2루 송구</button><button data-throw="third">3루 송구</button><button data-throw="home">홈 송구</button></div></div></div>';
     }else if(phase==="result"){
       hint.textContent="플레이 결과를 확인하고 다음 타석으로 진행하세요.";
       controls.innerHTML='<div class="diamond-result-controls"><b>'+esc(atBatResult||"플레이 종료")+'</b><button class="diamond-primary" data-control="next">다음 타석</button></div>';
@@ -286,8 +330,16 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     setResult(quality>.82?"완벽한 타구! 외야로 뻗어갑니다.":quality>.58?"정타! 타구가 필드로 향합니다.":"빗맞은 타구! 수비가 처리합니다.");
     phaseLabel.textContent="BALL IN PLAY";
     battingPlayer.userData.batPivot.rotation.z=-1.8;
-    activeFielder=fielders.reduce((best,f)=>!best||f.position.distanceTo(ball.position)<best.position.distanceTo(ball.position)?f:best,null);
-    activeFielderIndex=fielders.indexOf(activeFielder);manualFielding=half==="top"&&(isTeamControl||match.controlMode==="player");
+    manualFielding=half==="top"&&(isTeamControl||(match.controlMode==="player"&&player.position!=="DH"));
+    const positionIndex={"3B":0,"1B":1,"SS":2,"2B":3,"LF":4,"CF":5,"RF":6}[player.position];
+    if(manualFielding&&match.controlMode==="player"){
+      if(player.position==="C")activeFielder=scene.userData.homeCatcher;
+      else if(["SP","RP","CP"].includes(player.position))activeFielder=scene.userData.userPitcher;
+      else activeFielder=scene.userData.homeFielders[positionIndex]||fielders[0];
+    }else{
+      activeFielder=fielders.reduce((best,f)=>!best||f.position.distanceTo(ball.position)<best.position.distanceTo(ball.position)?f:best,null);
+    }
+    activeFielderIndex=fielders.indexOf(activeFielder);
     setCamera("field");
     renderControls();updateMatch();
   };
@@ -475,8 +527,9 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     updateMatch();
   }
   const onControl=e=>{
-    const b=e.target.closest("[data-control],[data-pitch],[data-guess],[data-steal],[data-move],[data-throw],[data-pickoff]");
+    const b=e.target.closest("[data-control],[data-pitch],[data-guess],[data-steal],[data-move],[data-throw],[data-pickoff],[data-field-camera]");
     if(!b)return;
+    if(b.dataset.fieldCamera){fieldCameraMode=b.dataset.fieldCamera;renderControls();return}
     if(b.dataset.pitch){selectedPitch=b.dataset.pitch;renderControls();return}
     if(b.dataset.guess){setGuess(b.dataset.guess);return}
     if(b.dataset.steal){steal(Number(b.dataset.steal));return}
@@ -525,7 +578,7 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     const awayCatcher=makePlayer(opponent.primary,"2","catcher");awayCatcher.position.set(0,0,37.8);awayCatcher.rotation.y=0;scene.add(awayCatcher);
     const umpireModel=makePlayer("#242c34","0","umpire");umpireModel.scale.set(.88,.95,.88);umpireModel.position.set(0,0,39.4);scene.add(umpireModel);umpire=umpireModel;
     players.push(userBatter,awayBatter,userPitcher,awayPitcher,homeCatcher,awayCatcher,umpireModel);
-    const positions=[[-24,0,10],[24,0,10],[-15,0,-9],[15,0,-9],[-48,0,-43],[0,0,-62],[48,0,-43],[0,0,-29]];
+    const positions=[[-24,0,10],[24,0,10],[-15,0,-9],[15,0,-9],[-48,0,-43],[0,0,-62],[48,0,-43]];
     const homeFielders=[],awayFielders=[],homeRunners=[],awayRunners=[];
     positions.forEach((p,i)=>{
       const hf=makePlayer(home,String(i+3),"fielder");hf.position.set(p[0],0,p[2]);scene.add(hf);homeFielders.push(hf);players.push(hf);
@@ -604,10 +657,19 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
         }
       }
     }
-    if(viewMode==="field"&&phase==="fielding"&&ball){
-      const anchor=activeFielder?.position||ball.position;
-      cameraTarget.copy(anchor).add(new THREE.Vector3(0,9,14));
-      cameraLookTarget.copy(ball.position);
+    if(viewMode==="field"&&phase==="fielding"&&ball&&activeFielder){
+      const anchor=activeFielder.position;
+      const forward=ball.position.clone().sub(anchor);forward.y=0;
+      if(forward.lengthSq()<.001)forward.set(0,0,-1);else forward.normalize();
+      activeFielder.rotation.y=Math.atan2(forward.x,-forward.z);
+      if(fieldCameraMode==="first"){
+        cameraTarget.copy(anchor).add(new THREE.Vector3(0,1.72,0));
+        cameraLookTarget.copy(anchor).add(forward.clone().multiplyScalar(18)).add(new THREE.Vector3(0,1.25,0));
+      }else{
+        const right=new THREE.Vector3(forward.z,0,-forward.x);
+        cameraTarget.copy(anchor).add(forward.clone().multiplyScalar(-7.2)).add(right.multiplyScalar(1.05)).add(new THREE.Vector3(0,3.15,0));
+        cameraLookTarget.copy(ball.position).add(new THREE.Vector3(0,.6,0));
+      }
     }
     const cameraEase=1-Math.exp(-dt*4.5);
     camera.position.lerp(cameraTarget,cameraEase);
