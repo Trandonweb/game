@@ -260,8 +260,9 @@ function addStadiumDetails(scene,team){
   box(scene,dark,0,43,-122,55,15,3);
   add(scene,new THREE.PlaneGeometry(48,10),new THREE.MeshBasicMaterial({map:makeSignTexture(team)}),[0,43,-120]);
   const ribbonMat=mat(team.primary,.42,.25,{emissive:team.primary,emissiveIntensity:.35});
-  const pts=[];for(let i=0;i<=96;i++){const a=i/96*Math.PI*2,r=team.parkShape==="circle"?124:124*polygonRadius(a,"octagon");pts.push([Math.cos(a)*r,29,Math.sin(a)*r])}
-  addLine(scene,pts,ribbonMat,.65);
+  // Keep the LED ribbon on the outfield concourse; do not draw a ring through the infield-side seating.
+  const pts=[];for(let i=0;i<=96;i++){const a=Math.PI+.2+(Math.PI-.4)*i/96;pts.push([Math.cos(a)*130,24.5,Math.sin(a)*130])}
+  addLine(scene,pts,ribbonMat,.55);
   // Urban backdrop with varied heights and rooftop silhouettes.
   const cityMats=[mat("#647985"),mat("#80939a"),mat("#526672")];
   for(let i=0;i<52;i++){
