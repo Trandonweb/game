@@ -547,7 +547,12 @@ export async function mountLiveMatch(host,team,player,match,onChange,onFinish,op
     renderControls();updateMatch();
   };
   const beginLivePlay=()=>{
-    intro?.classList.add("hidden");setPhaseMode();
+    if(phase!=="intro")return;
+    intro?.classList.add("hidden");
+    // Leave the intro state before setPhaseMode; otherwise its intro guard returns forever.
+    phase="ready";
+    setPhaseMode();
+    updateMatch();
   };
   const onSkip=()=>{introClock=1;beginLivePlay()};
   const onBench=()=>toggleBench();
